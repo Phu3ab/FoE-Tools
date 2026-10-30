@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>Schedule reminders</title>
+<style>
+:root {
+  --bg: #1a1f2e;
+  --panel: #232a3d;
+  --accent: #d4a94b;
+  --blue: #6fa8dc;
+  --text: #e8e6df;
+  --muted: #8a92a6;
+  --border: #333d54;
+  --warn: #e08a5b;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font:
+    14px system-ui,
+    sans-serif;
+  overflow-y: auto;
+  padding: 10px 10px calc(16px + env(safe-area-inset-bottom));
+  max-width: 640px;
+  margin: 0 auto;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+h1 {
+  font-size: 1.15rem;
+  margin: 4px 0;
+  color: var(--accent);
+}
+h2 {
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+  color: var(--blue);
+}
+.sub,
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 2px 0 10px;
+}
+section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+input,
+select,
+button {
+  background: #10141f;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 8px;
+  font: inherit;
+  min-width: 0;
+}
+button {
+  cursor: pointer;
+}
+button.main {
+  background: var(--accent);
+  color: #1a1f2e;
+  font-weight: 700;
+  border-color: var(--accent);
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+label input,
+label select {
+  color: var(--text);
+  font-size: 14px;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.wide {
+  grid-column: 1 / -1;
+}
+.info,
+.status,
+.sync {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  min-height: 16px;
+}
+.sync.dirty {
+  color: var(--warn);
+}
+.sync.ok {
+  color: #7fc98f;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.row .txt {
+  grid-column: 1 / -1;
+}
+.row.off {
+  opacity: 0.55;
+}
+.row .warn {
+  grid-column: 1 / -1;
+  color: var(--warn);
+  font-size: 12px;
+}
+.row .chk {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+.row .chk input {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+.empty {
+  color: var(--muted);
+  padding: 6px 0;
+}
+#add {
+  margin-top: 8px;
+}
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.pv {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.pv b {
+  color: var(--accent);
+  white-space: nowrap;
+}
+.pv span {
+  overflow-wrap: anywhere;
+}
+</style></head><body>
+<header>
+<h1 data-i18n="n.title">Zeitplan-Erinnerungen</h1>
+<select id="lgs" title="Language"><option value="de">DE</option><option value="en">EN</option></select>
+</header>
+<p class="sub" data-i18n="n.sub">Discord-Nachricht zur exakten Zeit – nur Text, nur für dich</p>
+
+<section>
+<h2 data-i18n="n.cycle">Zyklus</h2>
+<div class="grid2">
+<label><span data-i18n="n.anchor">Zyklusstart (erster Tag)</span><input type="date" id="anchor"></label>
+<label><span data-i18n="n.length">Zykluslänge</span><select id="cycle"></select></label>
+<label class="wide"><span data-i18n="n.tz">Zeitzone</span><select id="tz"></select></label>
+</div>
+<div class="info" id="info"></div>
+</section>
+
+<section>
+<h2 data-i18n="n.entries">Einträge</h2>
+<div id="list"></div>
+<button id="add" data-i18n="n.add">+ Eintrag</button>
+</section>
+
+<section>
+<h2 data-i18n="n.preview">Nächste Nachrichten</h2>
+<div id="prev"></div>
+</section>
+
+<section>
+<h2>Cloudflare Worker</h2>
+<div class="grid2">
+<label class="wide"><span data-i18n="n.url">Worker-URL</span><input type="url" id="url" placeholder="https://foe-reminders.NAME.workers.dev" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+<label class="wide"><span data-i18n="n.token">Zugriffs-Token</span><input type="password" id="token" autocomplete="off"></label>
+</div>
+<div class="btns">
+<button id="send" class="main" data-i18n="n.send">Zeitplan senden</button>
+<button id="test" data-i18n="n.test">Test senden</button>
+<button id="load" data-i18n="n.load">Vom Worker laden</button>
+</div>
+<div class="sync" id="sync"></div>
+<div class="status" id="st"></div>
+<p class="hint" data-i18n="n.hint">Die Discord-Webhook-URL bleibt geheim in Cloudflare – hier nie eintragen.</p>
+</section>
+
+<script>
+// Wörterbuch Erinnerungen (notify.html): texts = Schlüssel -> {en, de}, Platzhalter {name}; Aufruf im Code: tl("schlüssel", {name: wert}).
+// Texte ändern = nur diese Datei.
+(window.I18N = window.I18N || {}).notify = {
+  "texts": {
+    "n.title": {"en": "Schedule reminders", "de": "Zeitplan-Erinnerungen"},
+    "n.sub": {"en": "Discord message at the exact time – text only, only for you", "de": "Discord-Nachricht zur exakten Zeit – nur Text, nur für dich"},
+    "n.cycle": {"en": "Cycle", "de": "Zyklus"},
+    "n.anchor": {"en": "Cycle start (first day)", "de": "Zyklusstart (erster Tag)"},
+    "n.length": {"en": "Cycle length", "de": "Zykluslänge"},
+    "n.days": {"en": "{n} days", "de": "{n} Tage"},
+    "n.tz": {"en": "Time zone", "de": "Zeitzone"},
+    "n.today": {"en": "Today: cycle day {d}/{c} ({w})", "de": "Heute: Zyklustag {d}/{c} ({w})"},
+    "n.beforeStart": {"en": "Cycle starts on {date}", "de": "Zyklus beginnt am {date}"},
+    "n.nextStart": {"en": "Next cycle start: {date}", "de": "Nächster Zyklusstart: {date}"},
+    "n.week": {"en": "Week {w} · {d}", "de": "Woche {w} · {d}"},
+    "n.entries": {"en": "Entries", "de": "Einträge"},
+    "n.add": {"en": "+ Entry", "de": "+ Eintrag"},
+    "n.empty": {"en": "No entries yet.", "de": "Noch keine Einträge."},
+    "n.textPh": {"en": "Message text", "de": "Nachrichtentext"},
+    "n.on": {"en": "Active", "de": "Aktiv"},
+    "n.del": {"en": "Delete", "de": "Löschen"},
+    "n.outside": {"en": "Day is outside the cycle – ignored", "de": "Tag liegt außerhalb des Zyklus – wird ignoriert"},
+    "n.preview": {"en": "Next messages", "de": "Nächste Nachrichten"},
+    "n.noPreview": {"en": "Nothing scheduled.", "de": "Nichts geplant."},
+    "n.url": {"en": "Worker URL", "de": "Worker-URL"},
+    "n.token": {"en": "Access token", "de": "Zugriffs-Token"},
+    "n.send": {"en": "Send schedule", "de": "Zeitplan senden"},
+    "n.test": {"en": "Send test", "de": "Test senden"},
+    "n.load": {"en": "Load from Worker", "de": "Vom Worker laden"},
+    "n.dirty": {"en": "Changes not sent to the Worker yet.", "de": "Änderungen noch nicht an den Worker gesendet."},
+    "n.synced": {"en": "Worker is up to date.", "de": "Worker ist auf dem aktuellen Stand."},
+    "n.needUrl": {"en": "Enter Worker URL and token first.", "de": "Erst Worker-URL und Token eintragen."},
+    "n.sending": {"en": "Sending…", "de": "Sende…"},
+    "n.sentOk": {"en": "Schedule sent ({n} entries).", "de": "Zeitplan gesendet ({n} Einträge)."},
+    "n.testOk": {"en": "Test message sent to Discord.", "de": "Testnachricht an Discord gesendet."},
+    "n.loadOk": {"en": "Loaded {n} entries from the Worker.", "de": "{n} Einträge vom Worker geladen."},
+    "n.failed": {"en": "Failed: {msg}", "de": "Fehlgeschlagen: {msg}"},
+    "n.confirmLoad": {"en": "Replace the local schedule with the one from the Worker?", "de": "Lokalen Zeitplan durch den des Workers ersetzen?"},
+    "n.hint": {"en": "The Discord webhook URL stays secret in Cloudflare – never enter it here.", "de": "Die Discord-Webhook-URL bleibt geheim in Cloudflare – hier nie eintragen."}
+  }
+};
+</script><script>
+// Schlüssel-basierte Übersetzung: createT(texts, getLang) -> t(key, params).
+// texts = { "bereich.name": { en: "…", de: "…" } }, Platzhalter {name} werden aus params ersetzt.
+// Fehlender Schlüssel: der Schlüssel selbst wird angezeigt und in der Konsole gemeldet; fehlende Sprache fällt auf en zurück.
+function createT(texts, getLang) {
+  return function t(key, params) {
+    const e = texts[key];
+    if (!e) {
+      console.warn("i18n: fehlender Schlüssel", key);
+      return key;
+    }
+    const s = e[getLang()] != null ? e[getLang()] : e.en;
+    return params ? s.replace(/\{(\w+)\}/g, (m, k) => (k in params ? params[k] : m)) : s;
+  };
+}
+</script><script>
+// Erinnerungen (notify.html): Zyklus-Zeitplan bearbeiten, Vorschau, an den Cloudflare-Worker (worker/) senden.
+// Der Zeitplan liegt lokal unter "foeff:notify" (im gemeinsamen Backup); Worker-URL + Token unter "foe-nt:conn" (bewusst nicht im Backup).
+const $ = (id) => document.getElementById(id);
+const KEY_CFG = "foeff:notify",
+  KEY_CONN = "foe-nt:conn",
+  KEY_SENT = "foe-nt:sent";
+let LG = "en";
+const rdLg = () => {
+  try {
+    LG = JSON.parse(localStorage.getItem("foeff:lang")) === "de" ? "de" : "en";
+  } catch {
+    LG = "en";
+  }
+};
+rdLg();
+const tl = createT(I18N.notify.texts, () => LG);
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach((e) => (e.textContent = tl(e.dataset.i18n)));
+}
+
+// ---- Zeitplan (Zustand) ----
+const DEF = { anchor: "2026-10-26", cycle: 14, tz: "Europe/Berlin", entries: [] };
+const CYCLES = [7, 14, 21, 28];
+const TZS = ["Europe/Berlin", "Europe/Vienna", "Europe/Zurich", "Europe/London", "UTC"];
+const uid = () => Math.random().toString(36).slice(2, 10);
+function clean(c) {
+  const o = { ...DEF, entries: [] };
+  if (!c || typeof c !== "object") return o;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(c.anchor)) o.anchor = c.anchor;
+  if (CYCLES.includes(c.cycle)) o.cycle = c.cycle;
+  if (typeof c.tz === "string" && c.tz) o.tz = c.tz;
+  for (const e of Array.isArray(c.entries) ? c.entries : []) {
+    if (!e || !/^\d{2}:\d{2}$/.test(e.time) || !Number.isInteger(e.day) || e.day < 0 || e.day > 59) continue;
+    o.entries.push({ id: String(e.id || uid()), day: e.day, time: e.time, text: String(e.text || "").slice(0, 1900), on: e.on !== false });
+  }
+  return o;
+}
+let cfg = DEF;
+try {
+  cfg = clean(JSON.parse(localStorage.getItem(KEY_CFG)));
+} catch {
+  cfg = clean(null);
+}
+const save = () => {
+  try {
+    localStorage.setItem(KEY_CFG, JSON.stringify(cfg));
+  } catch {}
+  renderSync();
+};
+const conn = () => {
+  try {
+    return { url: "", token: "", ...JSON.parse(localStorage.getItem(KEY_CONN)) };
+  } catch {
+    return { url: "", token: "" };
+  }
+};
+const saveConn = () => {
+  try {
+    localStorage.setItem(KEY_CONN, JSON.stringify({ url: $("url").value.trim(), token: $("token").value.trim() }));
+  } catch {}
+};
+
+// ---- Datum/Zeit (gleiche Logik wie worker/worker.js) ----
+const dayNum = (s) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 864e5;
+const addDays = (s, n) => new Date((dayNum(s) + n) * 864e5).toISOString().slice(0, 10);
+const toMin = (t) => +t.slice(0, 2) * 60 + +t.slice(3, 5);
+function nowIn(tz) {
+  let p;
+  try {
+    p = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).formatToParts(new Date());
+  } catch {
+    return nowIn("UTC");
+  }
+  const g = (t) => p.find((x) => x.type === t).value;
+  return { date: `${g("year")}-${g("month")}-${g("day")}`, min: +g("hour") * 60 + +g("minute") };
+}
+// Zyklustag 0..cycle-1; vor dem Startdatum -1 (nichts wird gesendet)
+function cycleDay(date) {
+  const d = dayNum(date) - dayNum(cfg.anchor);
+  return d < 0 ? -1 : d % cfg.cycle;
+}
+const fmtDate = (s, o) => new Intl.DateTimeFormat(LG, { ...o, timeZone: "UTC" }).format(new Date(dayNum(s) * 864e5));
+const wd = (n) => fmtDate(addDays(cfg.anchor, n), { weekday: "short" });
+const dayLabel = (n) => tl("n.week", { w: Math.floor(n / 7) + 1, d: wd(n) });
+
+// ---- Anzeige ----
+function renderInfo() {
+  const t = nowIn(cfg.tz),
+    cd = cycleDay(t.date),
+    dm = { day: "numeric", month: "numeric", weekday: "short" };
+  let s;
+  if (cd < 0) s = tl("n.beforeStart", { date: fmtDate(cfg.anchor, dm) });
+  else {
+    const next = addDays(cfg.anchor, (Math.floor((dayNum(t.date) - dayNum(cfg.anchor)) / cfg.cycle) + 1) * cfg.cycle);
+    s = tl("n.today", { d: cd + 1, c: cfg.cycle, w: dayLabel(cd) }) + " · " + tl("n.nextStart", { date: fmtDate(next, dm) });
+  }
+  $("info").textContent = s;
+}
+function renderPreview() {
+  const t = nowIn(cfg.tz),
+    out = [];
+  for (let o = 0; o <= cfg.cycle && out.length < 8; o++) {
+    const date = addDays(t.date, o),
+      cd = cycleDay(date);
+    if (cd < 0) continue;
+    cfg.entries
+      .filter((e) => e.on && e.day === cd && (o > 0 || toMin(e.time) >= t.min))
+      .sort((a, b) => toMin(a.time) - toMin(b.time))
+      .forEach((e) => out.push({ date, e }));
+  }
+  const box = $("prev");
+  box.textContent = "";
+  if (!out.length) return void (box.textContent = tl("n.noPreview"));
+  for (const { date, e } of out.slice(0, 8)) {
+    const r = document.createElement("div"),
+      b = document.createElement("b"),
+      s = document.createElement("span");
+    r.className = "pv";
+    b.textContent = fmtDate(date, { weekday: "short", day: "numeric", month: "numeric" }) + " " + e.time;
+    s.textContent = e.text;
+    r.append(b, s);
+    box.append(r);
+  }
+}
+function renderEntries() {
+  const box = $("list");
+  box.textContent = "";
+  if (!cfg.entries.length) {
+    const d = document.createElement("div");
+    d.className = "empty";
+    d.textContent = tl("n.empty");
+    box.append(d);
+  }
+  for (const e of cfg.entries) {
+    const r = document.createElement("div"),
+      day = document.createElement("select"),
+      time = document.createElement("input"),
+      txt = document.createElement("input"),
+      lab = document.createElement("label"),
+      on = document.createElement("input"),
+      del = document.createElement("button");
+    r.className = "row" + (e.on ? "" : " off");
+    for (let n = 0; n < Math.max(cfg.cycle, e.day + 1); n++) day.add(new Option(dayLabel(n), n));
+    day.value = e.day;
+    day.onchange = () => ((e.day = +day.value), save(), renderAll());
+    time.type = "time";
+    time.value = e.time;
+    time.onchange = () => (time.value ? ((e.time = time.value), sortEntries(), save(), renderAll()) : (time.value = e.time));
+    on.type = "checkbox";
+    on.checked = e.on;
+    on.onchange = () => ((e.on = on.checked), save(), renderAll());
+    lab.className = "chk";
+    lab.append(on, document.createTextNode(tl("n.on")));
+    del.textContent = "🗑";
+    del.title = tl("n.del");
+    del.onclick = () => ((cfg.entries = cfg.entries.filter((x) => x !== e)), save(), renderAll());
+    txt.type = "text";
+    txt.className = "txt";
+    txt.maxLength = 1900;
+    txt.placeholder = tl("n.textPh");
+    txt.value = e.text;
+    txt.oninput = () => ((e.text = txt.value), save(), renderPreview());
+    r.append(day, time, lab, del, txt);
+    if (e.day >= cfg.cycle) {
+      const w = document.createElement("div");
+      w.className = "warn";
+      w.textContent = tl("n.outside");
+      r.append(w);
+    }
+    box.append(r);
+  }
+}
+function renderSync() {
+  let sent = null;
+  try {
+    sent = localStorage.getItem(KEY_SENT);
+  } catch {}
+  const el = $("sync"),
+    ok = sent === JSON.stringify(cfg);
+  el.textContent = tl(ok ? "n.synced" : "n.dirty");
+  el.className = "sync " + (ok ? "ok" : "dirty");
+}
+const sortEntries = () => cfg.entries.sort((a, b) => a.day - b.day || toMin(a.time) - toMin(b.time));
+function renderForm() {
+  $("anchor").value = cfg.anchor;
+  const c = $("cycle");
+  c.textContent = "";
+  CYCLES.forEach((n) => c.add(new Option(tl("n.days", { n }), n)));
+  c.value = cfg.cycle;
+  const z = $("tz");
+  z.textContent = "";
+  (TZS.includes(cfg.tz) ? TZS : [cfg.tz, ...TZS]).forEach((x) => z.add(new Option(x, x)));
+  z.value = cfg.tz;
+}
+function renderAll() {
+  renderInfo();
+  renderEntries();
+  renderPreview();
+  renderSync();
+}
+function langUI() {
+  $("lgs").value = LG;
+  document.documentElement.lang = LG;
+  applyI18n();
+  renderForm();
+  renderAll();
+}
+
+// ---- Eingaben ----
+$("anchor").onchange = (e) => (e.target.value ? ((cfg.anchor = e.target.value), save(), renderForm(), renderAll()) : (e.target.value = cfg.anchor));
+$("cycle").onchange = (e) => ((cfg.cycle = +e.target.value), save(), renderAll());
+$("tz").onchange = (e) => ((cfg.tz = e.target.value), save(), renderAll());
+$("add").onclick = () => {
+  const last = cfg.entries[cfg.entries.length - 1];
+  cfg.entries.push({ id: uid(), day: last ? last.day : 0, time: last ? last.time : "18:00", text: "", on: true });
+  save();
+  renderAll();
+};
+$("lgs").onchange = (e) => {
+  try {
+    localStorage.setItem("foeff:lang", JSON.stringify(e.target.value));
+  } catch {}
+  rdLg();
+  langUI();
+};
+addEventListener("storage", (e) => {
+  if (e.key === "foeff:lang" || e.key === null) {
+    rdLg();
+    langUI();
+  }
+});
+
+// ---- Cloudflare Worker ----
+async function api(method, path, body) {
+  const c = conn();
+  if (!c.url || !c.token) throw new Error(tl("n.needUrl"));
+  const r = await fetch(c.url.replace(/\/+$/, "") + path, {
+    method,
+    headers: { Authorization: "Bearer " + c.token, ...(body ? { "Content-Type": "application/json" } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let j = null;
+  try {
+    j = await r.json();
+  } catch {}
+  if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+  return j;
+}
+async function run(fn) {
+  saveConn();
+  $("st").textContent = tl("n.sending");
+  try {
+    $("st").textContent = await fn();
+  } catch (e) {
+    $("st").textContent = tl("n.failed", { msg: e.message });
+  }
+}
+$("send").onclick = () =>
+  run(async () => {
+    const body = JSON.stringify(cfg);
+    await api("PUT", "/config", cfg);
+    try {
+      localStorage.setItem(KEY_SENT, body);
+    } catch {}
+    renderSync();
+    return tl("n.sentOk", { n: cfg.entries.length });
+  });
+$("test").onclick = () =>
+  run(async () => {
+    await api("POST", "/test");
+    return tl("n.testOk");
+  });
+$("load").onclick = () =>
+  run(async () => {
+    const c = clean(await api("GET", "/config"));
+    if (!confirm(tl("n.confirmLoad"))) return "";
+    cfg = c;
+    save();
+    try {
+      localStorage.setItem(KEY_SENT, JSON.stringify(cfg));
+    } catch {}
+    langUI();
+    return tl("n.loadOk", { n: cfg.entries.length });
+  });
+$("url").value = conn().url;
+$("token").value = conn().token;
+$("url").onchange = $("token").onchange = saveConn;
+sortEntries();
+langUI();
+setInterval(() => (renderInfo(), renderPreview()), 60000);
+</script>
+</body></html>

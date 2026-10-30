@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>City Planner</title>
+<style>
+:root {
+  --bg: #1a1f2e;
+  --panel: #232a3d;
+  --accent: #d4a94b;
+  --blue: #6fa8dc;
+  --text: #e8e6df;
+  --muted: #8a92a6;
+  --border: #333d54;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    13px system-ui,
+    sans-serif;
+}
+button,
+select,
+input {
+  background: #10141f;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font: inherit;
+}
+button.on {
+  background: var(--accent);
+  color: #1a1f2e;
+  font-weight: 700;
+}
+#top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+#wrap {
+  flex: 1;
+  overflow: auto;
+  min-height: 80px;
+  background: #000;
+}
+canvas {
+  display: block;
+}
+#st {
+  padding: 3px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  background: var(--panel);
+  min-height: 22px;
+}
+#bot {
+  max-height: 40vh;
+  overflow: auto;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+details {
+  padding: 4px 8px;
+}
+summary {
+  cursor: pointer;
+  color: var(--blue);
+  font-weight: 600;
+  padding: 4px 0;
+}
+#pal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+#pal button {
+  text-align: left;
+  font-size: 12px;
+}
+#pal button:disabled {
+  opacity: 0.35;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+td {
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--border);
+}
+td + td {
+  text-align: right;
+}
+.g {
+  color: #e07a7a;
+}
+
+#tgs {
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+#tgs button {
+  flex: 1;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+#tgs button::before {
+  content: "▾ ";
+}
+#tgs button.col::before {
+  content: "▸ ";
+}
+.hid {
+  display: none !important;
+}
+</style></head><body>
+<div id="tgs"><button data-tg="top" data-i18n="ui.tools">Werkzeuge</button><button data-tg="map" data-i18n="ui.map">Karte</button><button data-tg="bot" data-i18n="ui.panel">Listen</button><button id="tgall" data-i18n="ui.toggleAll">⇕ Abschnitte</button></div>
+<div id="top">
+<select id="era" title="Era" data-i18n-title="ui.eraTitle"></select><select id="lgs" title="Language" style="margin-left:auto"><option value="de">DE</option><option value="en">EN</option></select>
+<button data-t="hand" title="Info / scroll" data-i18n-title="ui.infoScroll">✋</button>
+<button data-t="sel" title="Multi-select (tap / drag frame)" data-i18n-title="ui.multiSelect">☑</button>
+<button data-t="move" title="Move building (drag)" data-i18n-title="ui.moveBuilding">↔️</button>
+<button data-t="exp" title="Expansion (drag)" data-i18n-title="ui.expansionDrag" data-i18n="ui.expShort">▦ Exp.</button>
+<button data-t="build" title="Building (drag)" data-i18n-title="ui.buildingDrag">🏠</button>
+<button data-t="street" title="Street (drag)" data-i18n-title="ui.streetDrag">🛣️</button>
+<button data-t="erase" title="Delete building (drag)" data-i18n-title="ui.deleteBuilding">🗑️</button>
+<button data-t="xexp" title="Remove expansion (drag)" data-i18n-title="ui.removeExpansion">▦✖</button>
+<button id="fit" title="Show entire city" data-i18n-title="ui.showCity">⤢</button><button id="zo">−</button><button id="zi">+</button>
+<button id="un" title="Undo" data-i18n-title="ui.undo" disabled>↩️</button><button id="re" title="Redo" data-i18n-title="ui.redo" disabled>↪️</button><button id="imp">📥 Import</button><button id="exp" title="Export">📤 Export</button><button id="rs">↺</button>
+<input type="file" id="file" accept=".txt,.json,text/plain,application/json" hidden>
+<div style="display:flex;gap:4px;width:100%"><select id="lay" style="flex:1;min-width:0" title="Layout"></select><button id="ln" title="New layout" data-i18n-title="ui.newLayout">➕</button><button id="lc" title="Duplicate layout" data-i18n-title="ui.duplicateLayout">⧉</button><button id="lr" title="Rename" data-i18n-title="ui.rename">✏️</button><button id="ld" title="Delete layout" data-i18n-title="ui.deleteLayout">🗑</button></div>
+</div>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="st"></div>
+<div id="bot">
+<div id="erabox" hidden style="padding:6px 8px"><span data-i18n="ui.era">Era:</span> <select id="erasel" style="max-width:62%"></select> <span id="eran" style="color:var(--muted)"></span></div>
+<div id="strbox" hidden style="padding:6px 8px"><span data-i18n="ui.street">Street:</span> <select id="strsel" style="max-width:72%"></select></div>
+<div id="lvbox" hidden style="padding:6px 8px"><span data-i18n="ui.gbLevel">GB level:</span> <input id="lv" type="number" min="1" max="999" style="width:80px"> <span id="lvn" style="color:var(--muted)"></span></div>
+<details open id="dp"><summary data-i18n="ui.buildList">Build list</summary>
+<div style="display:flex;gap:4px;flex-wrap:wrap">
+<input id="q" placeholder="Search…" data-i18n-placeholder="ui.search" style="flex:1;min-width:100px">
+<select id="cat"><option value="" data-i18n="cat.all">All</option><option value="residential" data-i18n="cat.residential">Residential</option><option value="culture" data-i18n="cat.culture">Culture</option><option value="production" data-i18n="cat.production">Production</option><option value="goods" data-i18n="cat.goods">Goods</option><option value="military" data-i18n="cat.military">Military</option><option value="decoration" data-i18n="cat.decoration">Decoration</option><option value="greatbuilding" data-i18n="cat.gb">GB</option><option value="x" data-i18n="cat.other">Other</option></select>
+<label style="align-self:center"><input type="checkbox" id="only"> <span data-i18n="ui.thisEraOnly">this era only</span></label></div>
+<div id="pal"></div></details>
+<details id="bld"><summary data-i18n="ui.placedBuildings">Placed buildings</summary><div id="bl"></div></details>
+<details open><summary data-i18n="ui.values">Values</summary><div style="display:flex;gap:6px;align-items:center;margin:4px 0"><span id="mkl" style="white-space:nowrap"></span><input id="mk" type="text" inputmode="decimal" style="flex:1;min-width:0"></div><div id="val"></div></details>
+</div>
+<script src="city-data.js"></script><script src="foeff-data.js"></script>
+<script>
+// Wörterbuch Planer (city.html): texts = Schlüssel -> {en, de}, Platzhalter {name}; Aufruf im Code: tl("schlüssel", {name: wert}).
+// Dazu Zeitalter- und Stat-Namen als Listen. Texte ändern = nur diese Datei.
+(window.I18N = window.I18N || {}).city = {
+  "texts": {
+    "ui.undo": {"en": "Undo", "de": "Rückgängig"},
+    "ui.redo": {"en": "Redo", "de": "Wiederherstellen"},
+    "ui.placedBuildings": {"en": "Placed buildings", "de": "Platzierte Gebäude"},
+    "ui.multiSelect": {"en": "Multi-select (tap / drag frame)", "de": "Mehrfachauswahl (tippen / Rahmen ziehen)"},
+    "ui.street": {"en": "Street:", "de": "Straße:"},
+    "ui.era": {"en": "Era:", "de": "Zeitalter:"},
+    "ui.eraTitle": {"en": "Era", "de": "Zeitalter"},
+    "ui.infoScroll": {"en": "Info / scroll", "de": "Info / scrollen"},
+    "ui.moveBuilding": {"en": "Move building (drag)", "de": "Gebäude verschieben (ziehen)"},
+    "ui.expansionDrag": {"en": "Expansion (drag)", "de": "Erweiterung (ziehen)"},
+    "ui.expShort": {"en": "▦ Exp.", "de": "▦ Erw."},
+    "ui.buildingDrag": {"en": "Building (drag)", "de": "Gebäude (ziehen)"},
+    "ui.streetDrag": {"en": "Street (drag)", "de": "Straße (ziehen)"},
+    "ui.deleteBuilding": {"en": "Delete building (drag)", "de": "Gebäude löschen (ziehen)"},
+    "ui.removeExpansion": {"en": "Remove expansion (drag)", "de": "Erweiterung entfernen (ziehen)"},
+    "ui.showCity": {"en": "Show entire city", "de": "Ganze Stadt anzeigen"},
+    "ui.newLayout": {"en": "New layout", "de": "Neues Layout"},
+    "ui.duplicateLayout": {"en": "Duplicate layout", "de": "Layout duplizieren"},
+    "ui.rename": {"en": "Rename", "de": "Umbenennen"},
+    "ui.deleteLayout": {"en": "Delete layout", "de": "Layout löschen"},
+    "ui.gbLevel": {"en": "GB level:", "de": "LG-Stufe:"},
+    "ui.buildList": {"en": "Build list", "de": "Bauliste"},
+    "ui.search": {"en": "Search…", "de": "Suche…"},
+    "cat.all": {"en": "All", "de": "Alle"},
+    "cat.residential": {"en": "Residential", "de": "Wohnen"},
+    "cat.culture": {"en": "Culture", "de": "Kultur"},
+    "cat.production": {"en": "Production", "de": "Produktion"},
+    "cat.goods": {"en": "Goods", "de": "Güter"},
+    "cat.military": {"en": "Military", "de": "Militär"},
+    "cat.decoration": {"en": "Decoration", "de": "Deko"},
+    "cat.gb": {"en": "GB", "de": "LG"},
+    "cat.other": {"en": "Other", "de": "Sonstige"},
+    "ui.thisEraOnly": {"en": "this era only", "de": "nur dieses Zeitalter"},
+    "ui.values": {"en": "Values", "de": "Werte"},
+    "ui.tools": {"en": "Tools", "de": "Werkzeuge"},
+    "ui.map": {"en": "Map", "de": "Karte"},
+    "ui.panel": {"en": "Lists", "de": "Listen"},
+    "ui.toggleAll": {"en": "Sections", "de": "Abschnitte"},
+    "tool.hand": {"en": "Tap = info, swipe = scroll", "de": "Tippen = Info, wischen = scrollen"},
+    "tool.sel": {"en": "Tap = select / deselect, drag = frame, tap empty cell = clear", "de": "Tippen = auswählen / abwählen, ziehen = Rahmen, leeres Feld = Auswahl löschen"},
+    "tool.move": {"en": "Tap a building and drag = move", "de": "Gebäude antippen und ziehen = verschieben"},
+    "tool.exp": {"en": "Drag = add several expansions (must border the city)", "de": "Ziehen = mehrere Erweiterungen (müssen an die Stadt grenzen)"},
+    "tool.build": {"en": "Pick a building, then drag = place multiple", "de": "Gebäude wählen, dann ziehen = mehrfach platzieren"},
+    "tool.street": {"en": "Pick a street, then drag", "de": "Straße wählen, dann ziehen"},
+    "tool.erase": {"en": "Drag = delete buildings", "de": "Ziehen = Gebäude löschen"},
+    "tool.xexp": {"en": "Drag = remove empty expansions", "de": "Ziehen = leere Erweiterungen entfernen"},
+    "dlg.nameExists": {"en": "Name already exists.", "de": "Name existiert schon."},
+    "dlg.newLayoutName": {"en": "Name of the new layout:", "de": "Name des neuen Layouts:"},
+    "dlg.copyName": {"en": "Name of the copy:", "de": "Name der Kopie:"},
+    "dlg.copySuffix": {"en": "copy", "de": "Kopie"},
+    "dlg.newName": {"en": "New name:", "de": "Neuer Name:"},
+    "dlg.resetCity": {"en": "Reset city?", "de": "Stadt zurücksetzen?"},
+    "bl.streets": {"en": "Streets", "de": "Straßen"},
+    "bl.none": {"en": "No buildings", "de": "Keine Gebäude"},
+    "sel.none": {"en": "Nothing selected", "de": "Nichts ausgewählt"},
+    "hist.nothingUndo": {"en": "Nothing to undo", "de": "Nichts zum Rückgängigmachen"},
+    "hist.nothingRedo": {"en": "Nothing to redo", "de": "Nichts zum Wiederherstellen"},
+    "era.set": {"en": "Set era…", "de": "Zeitalter setzen…"},
+    "era.auto": {"en": "Auto", "de": "Auto"},
+    "era.fixedByBuilding": {"en": "fixed by building", "de": "durch Gebäude festgelegt"},
+    "era.cityEra": {"en": "= city era", "de": "= Stadt-Zeitalter"},
+    "mk.label": {"en": "Highlight below efficiency:", "de": "Markieren unter Effizienz:"},
+    "mk.ph": {"en": "e.g. 15 (empty = off)", "de": "z. B. 15 (leer = aus)"},
+    "mk.summary": {"en": "{n} buildings below {t} highlighted ({p} % of building area)", "de": "{n} Gebäude unter {t} markiert ({p} % der Gebäudefläche)"},
+    "mk.eff": {"en": "eff.", "de": "Eff."},
+    "mk.note": {"en": "Efficiency as in the Efficiency tab (stat and item weights from there, area incl. the street the building needs). Inactive buildings are not counted.", "de": "Effizienz wie im Effizienz-Tab (Wert- und Item-Gewichte von dort, Fläche inkl. benötigter Straße). Inaktive Gebäude zählen nicht mit."},
+    "val.itemsTotal": {"en": "Items (total)", "de": "Items (Summe)"},
+    "val.whole": {"en": "(whole)", "de": "(ganze)"},
+    "val.area": {"en": "Area used / free / total", "de": "Fläche belegt / frei / gesamt"},
+    "val.expansions": {"en": "Expansions", "de": "Erweiterungen"},
+    "val.buildingsActive": {"en": "Buildings active / inactive", "de": "Gebäude aktiv / inaktiv"},
+    "val.streetPieces": {"en": "of which street pieces", "de": "davon Straßenteile"},
+    "val.note": {"en": "Values from the Efficiency data (active buildings only, selected era)", "de": "Werte aus den Efficiency-Daten (nur aktive Gebäude, gewähltes Zeitalter)"},
+    "io.exportFailed": {"en": "Export failed", "de": "Export fehlgeschlagen"},
+    "io.importing": {"en": "Importing…", "de": "Import läuft…"},
+    "io.importFailed": {"en": "Import failed – please choose city planner export.txt or a city-plan.json.", "de": "Import fehlgeschlagen – bitte die city planner export.txt oder eine city-plan.json wählen."},
+    "bl.nInactive": {"en": "{n} inactive", "de": "{n} inaktiv"},
+    "sel.nSelected": {"en": "{n} selected", "de": "{n} ausgewählt"},
+    "sel.nameSelected": {"en": "{name}: {n} selected", "de": "{name}: {n} ausgewählt"},
+    "era.autoWith": {"en": "Auto ({era})", "de": "Auto ({era})"},
+    "era.nOfChanged": {"en": "{n} of {total} changed", "de": "{n} von {total} geändert"},
+    "val.nOfM": {"en": "{n} of {m}", "de": "{n} von {m}"},
+    "val.missing": {"en": "; {n} buildings without Efficiency data are missing", "de": "; {n} Gebäude ohne Efficiency-Daten fehlen"},
+    "val.loading": {"en": "; loading Efficiency data …", "de": "; Efficiency-Daten werden geladen …"},
+    "val.tableUpTo": {"en": "(table up to level {n})", "de": "(Tabelle bis Stufe {n})"},
+    "val.noTable": {"en": "(no table data)", "de": "(keine Tabellendaten)"},
+    "map.streetLevel": {"en": "Street level {n}", "de": "Straße Stufe {n}"},
+    "map.inactiveNoRoad": {"en": "inactive (no road connection)", "de": "inaktiv (keine Straßenverbindung)"},
+    "map.cell": {"en": "Cell {x}/{y}", "de": "Feld {x}/{y}"},
+    "pal.more": {"en": "… {n} more – use search", "de": "… {n} weitere – Suche nutzen"},
+    "io.exportedNamed": {"en": "Exported: {name} ({n} objects)", "de": "Exportiert: {name} ({n} Objekte)"},
+    "io.exportedCopied": {"en": "Exported (copied)", "de": "Exportiert (kopiert)"},
+    "io.imported": {"en": "Import: {n} objects, {blocks} expansion blocks", "de": "Import: {n} Objekte, {blocks} Erweiterungsblöcke"},
+    "io.skipped": {"en": ", {n} unknown skipped", "de": ", {n} unbekannt übersprungen"}
+  },
+  "eraNamesDe": [
+    "Steinzeit",
+    "Bronzezeit",
+    "Eisenzeit",
+    "Frühes Mittelalter",
+    "Hochmittelalter",
+    "Spätes Mittelalter",
+    "Kolonialzeit",
+    "Industriezeitalter",
+    "Jahrhundertwende",
+    "Die Moderne",
+    "Die Postmoderne",
+    "Gegenwart",
+    "Morgen",
+    "Die Zukunft",
+    "Arktische Zukunft",
+    "Ozeanische Zukunft",
+    "Virtuelle Zukunft",
+    "Raumfahrt: Mars",
+    "Raumfahrt: Asteroidengürtel",
+    "Raumfahrt: Venus",
+    "Raumfahrt: Jupitermond",
+    "Raumfahrt: Titan",
+    "Raumfahrt: Weltraumbasis",
+    "Stellares Zeitalter: Entdeckung"
+  ],
+  "eraNamesEn": [
+    "Stone Age",
+    "Bronze Age",
+    "Iron Age",
+    "Early Middle Ages",
+    "High Middle Ages",
+    "Late Middle Ages",
+    "Colonial Age",
+    "Industrial Age",
+    "Progressive Era",
+    "Modern Era",
+    "Postmodern Era",
+    "Contemporary Era",
+    "Tomorrow Era",
+    "The Future",
+    "Arctic Future",
+    "Oceanic Future",
+    "Virtual Future",
+    "Space Age Mars",
+    "Space Age Asteroid Belt",
+    "Space Age Venus",
+    "Space Age Jupiter Moon",
+    "Space Age Titan",
+    "Space Age Space Hub",
+    "Stellar Age: Discovery"
+  ],
+  "statNamesEn": [
+    "Forge Points",
+    "Forge Points Boost",
+    "Goods",
+    "Goods (previous era)",
+    "Goods (next era)",
+    "Raw goods (3 eras back)",
+    "Goods Boost",
+    "Special Goods",
+    "Special Goods Boost",
+    "Guild Goods",
+    "Guild Goods Boost",
+    "Random Military Units",
+    "Rogues",
+    "Coins",
+    "Coin Boost",
+    "Supplies",
+    "Supply Boost",
+    "Medals",
+    "Medal Boost",
+    "Diamonds",
+    "Blueprints",
+    "Guild Power",
+    "Population",
+    "Happiness"
+  ],
+  "statNamesDe": [
+    "Forge-Punkte",
+    "Forge-Punkte-Bonus",
+    "Güter",
+    "Güter (vorh. Zeitalter)",
+    "Güter (nächstes Zeitalter)",
+    "Unveredelte Güter (3 Zeitalter zurück)",
+    "Güter-Bonus",
+    "Spezialgüter",
+    "Spezialgüter-Bonus",
+    "Gildengüter",
+    "Gildengüter-Bonus",
+    "Zufällige Militäreinheiten",
+    "Agenten",
+    "Münzen",
+    "Münz-Bonus",
+    "Vorräte",
+    "Vorrats-Bonus",
+    "Medaillen",
+    "Medaillen-Bonus",
+    "Diamanten",
+    "Blaupausen",
+    "Gildenmacht",
+    "Bevölkerung",
+    "Zufriedenheit"
+  ]
+};
+</script><script>
+// Wörterbücher für items (Deutsch = Quelltext im Code, Englisch = Ziel; siehe docs/HANDOFF.md)
+(window.I18N = window.I18N || {}).items = {
+  "ITX": {
+    "One Up Kit": "One-Up-Kit",
+    "Mass Self-Aid Kit": "Massen-Selbsthilfe-Kit",
+    "Self-Aid Kit": "Selbsthilfe-Kit",
+    "Renovation Kit": "Renovierungs-Kit",
+    "Renovation Kits": "Renovierungs-Kits",
+    "Store Building": "Gebäude einlagern",
+    "Ranking Points": "Rangpunkte",
+    "Random Special Building Fragments": "Zufällige Spezialgebäude-Fragmente",
+    "Finish All Supply Productions": "Alle Vorrats-Produktionen abschließen",
+    "Finish All Supply Production": "Alle Vorrats-Produktion abschließen",
+    "[Unit Type NextEra] Random": "Einheit: Zufällig (nächstes)",
+    "[Unit Type] Random": "Einheit: Zufällig"
+  }
+};
+</script><script>
+// Deutsche Item-Namen (Englisch -> Deutsch): ITM (data/ITM.js), ITX (i18n/items.js) + Regeln für Kits, Einheiten, Boosts.
+// Gemeinsam genutzt von foeff.html und city.html. Liefert itd(englischerName) -> deutscher Name oder null.
+const ITX = I18N.items.ITX;
+function itd(k) {
+  if (ITM[k]) return ITM[k];
+  if (ITX[k]) return ITX[k];
+  let x;
+  if ((x = /^(.*?)(?:(Golden|Silver|Platinum) )?(Selection|Upgrade) Kit$/.exec(k))) {
+    const m = { Golden: "Gold-", Silver: "Silber-", Platinum: "Platin-" };
+    return x[1] + (x[2] ? m[x[2]] : "") + (x[3] === "Selection" ? "Auswahl-Kit" : "Upgrade-Kit");
+  }
+  if ((x = /^\[Unit Type( NextEra)?\] (.+)$/.exec(k)))
+    return (
+      "Einheit: " +
+      ({
+        Fast: "Schnell",
+        Heavy: "Schwer",
+        Light: "Leicht",
+        Artillery: "Artillerie",
+        Ranged: "Fernkämpfer",
+        Random: "Zufällig",
+        Champion: "Held",
+        "Color Guard": "Fahnenwache",
+        "Military Drummer": "Militär-Trommler",
+        Rogue: "Agent",
+      }[x[2]] || x[2]) +
+      (x[1] ? " (nächstes)" : "")
+    );
+  if ((x = /^(\d+)% Coin Boost$/.exec(k))) return x[1] + "% Münz-Bonus";
+  if ((x = /^(\d+(?:h|min)) Mass (Coin|Supply) Rush$/.exec(k)))
+    return x[1] + " Massen-" + (x[2] === "Coin" ? "Münz" : "Vorrats") + "-Eile";
+  if ((x = /^(\d+)% (Attack|Defense) for (Attacking|Defending) Army Boost$/.exec(k)))
+    return (
+      x[1] +
+      "% " +
+      (x[2] === "Attack" ? "Angriff" : "Verteidigung") +
+      " für " +
+      (x[3] === "Attacking" ? "angreifende" : "verteidigende") +
+      " Armee"
+    );
+  if ((x = /^Trading Post - Lv\. (\d+)$/.exec(k))) return "Handelsposten - Stufe " + x[1];
+  return null;
+}
+</script><script>
+// Schlüssel-basierte Übersetzung: createT(texts, getLang) -> t(key, params).
+// texts = { "bereich.name": { en: "…", de: "…" } }, Platzhalter {name} werden aus params ersetzt.
+// Fehlender Schlüssel: der Schlüssel selbst wird angezeigt und in der Konsole gemeldet; fehlende Sprache fällt auf en zurück.
+function createT(texts, getLang) {
+  return function t(key, params) {
+    const e = texts[key];
+    if (!e) {
+      console.warn("i18n: fehlender Schlüssel", key);
+      return key;
+    }
+    const s = e[getLang()] != null ? e[getLang()] : e.en;
+    return params ? s.replace(/\{(\w+)\}/g, (m, k) => (k in params ? params[k] : m)) : s;
+  };
+}
+</script><script>
+// Planer, Teil: Konstanten, Sprache (tl), Namen/Stat-Tabellen, Daten (EF), Zustand (items, era, ub), reset()
+// Früher Teil von js/city.js; Ladereihenfolge: siehe <script>-Tags in city.html.
+const C = CP,
+  E = C.eras,
+  N = 72,
+  B = 18,
+  KEY = "foe-cp:v1";
+const ED = I18N.city.eraNamesDe,
+  EE = I18N.city.eraNamesEn;
+let LG = "en";
+const rdLg = () => {
+  try {
+    LG = JSON.parse(localStorage.getItem("foeff:lang")) === "de" ? "de" : "en";
+  } catch {
+    LG = "en";
+  }
+};
+rdLg();
+// tl(key, {platzhalter}) -> Text der aktuellen Sprache; Texte stehen in i18n/city.js (texts)
+const tl = createT(I18N.city.texts, () => LG);
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach((e) => (e.textContent = tl(e.dataset.i18n)));
+  document.querySelectorAll("[data-i18n-title]").forEach((e) => e.setAttribute("title", tl(e.dataset.i18nTitle)));
+  document
+    .querySelectorAll("[data-i18n-placeholder]")
+    .forEach((e) => e.setAttribute("placeholder", tl(e.dataset.i18nPlaceholder)));
+}
+const EN = new Proxy([], { get: (_, i) => (LG === "en" ? EE : ED)[i] });
+const TXT = {
+  de: { th: "Rathaus", s1: "Straße St. ", s2: "Straße St. " },
+  en: { th: "Town Hall", s1: "Street Lv. ", s2: "Street Lv. " },
+};
+function nm(d) {
+  if (LG === "en") {
+    if (d.t == "main_building") return TXT.en.th;
+    if (EF) {
+      const i = EF.ix[d.i];
+      if (i != null && EF.D.b[i][1]) return EF.D.b[i][1];
+    }
+  }
+  return d.n;
+}
+const SL = I18N.city.statNamesEn;
+const SLD = I18N.city.statNamesDe;
+[
+  ["", "", ""],
+  ["GbG: ", "GG: "],
+  ["GE: ", "GEx: "],
+  ["QI: ", "QI: "],
+].forEach(([p, pd]) =>
+  ["Attack% (attacker)", "Defense% (attacker)", "Attack% (defender)", "Defense% (defender)"].forEach((n, k) => {
+    SL.push(p + n);
+    SLD.push(
+      pd +
+        ["Angriff% (Angreifer)", "Verteidigung% (Angreifer)", "Angriff% (Verteidiger)", "Verteidigung% (Verteidiger)"][
+          k
+        ],
+    );
+  }),
+);
+for (let i = 40; i < 52; i++) {
+  SL.push(null);
+  SLD.push(null);
+}
+SL.push(
+  ..."Quantum Coin Boost,Quantum Supply Boost,Quantum Start Coins,Quantum Start Supplies,Quantum Start Goods,Quantum Start Units,Quantum Actions/Cycle,Quantum Capacity".split(
+    ",",
+  ),
+);
+SLD.push(
+  ..."Quanten-Münzbonus,Quanten-Vorratsbonus,Quanten-Startmünzen,Quanten-Startvorräte,Quanten-Startgüter,Quanten-Starteinheiten,Quanten-Aktionen/Zyklus,Quanten-Kapazität".split(
+    ",",
+  ),
+);
+let EF = null;
+const COL = {
+  main_building: "#e89b45",
+  greatbuilding: "#f06bb5",
+  street: "#b9a77a",
+  residential: "#6fa8dc",
+  culture: "#c58ad6",
+  production: "#d98c5f",
+  goods: "#5fc2b0",
+  military: "#d96b6b",
+  decoration: "#9fc77a",
+};
+const by = {};
+C.items.forEach((i) => (by[i.i] = i));
+const maxB = [...C.blocks].map((c) => c == "1");
+const isMin = (b) => {
+  const r = (b / B) | 0,
+    c = b % B;
+  return r >= 2 && r <= 5 && c >= 2 && c <= 5;
+};
+const $ = (id) => document.getElementById(id);
+const mk = (d, x, y, lv, er) => ({ d, x, y, w: d.w, l: d.l, lv: lv || 0, er: er == null ? undefined : er });
+const msel = new Set();
+const cur = () => (msel.size ? [...msel].filter((i) => items.includes(i)) : pick && items.includes(pick) ? [pick] : []);
+let pick = null,
+  era = 8,
+  tool = "hand",
+  sel = null,
+  cs = 12,
+  ub,
+  items,
+  g,
+  on,
+  drag = null,
+  plan = null;
+const cv = $("cv"),
+  cx = cv.getContext("2d");
+const eraOpts = () => {
+  $("era").innerHTML = E.map((e, i) => `<option value="${i}">${EN[i]}</option>`).join("");
+  $("era").value = era;
+};
+eraOpts();
+addEventListener("storage", (e) => {
+  if (e.key === "foeff:lang" || e.key === null) {
+    rdLg();
+    langUI();
+  }
+});
+const thFor = (e) => by["H_" + E[e] + "_Townhall"] || C.items.find((i) => i.t == "main_building");
+function reset() {
+  msel.clear();
+  ub = maxB.map((_, b) => isMin(b));
+  items = [mk(thFor(era), 8, 8)];
+}
+</script><script>
+// Planer, Teil: Layouts speichern/laden, Rückgängig/Wiederholen (hbtn, save, hgo), Namensdialog (askName)
+// Früher Teil von js/city.js; Ladereihenfolge: siehe <script>-Tags in city.html.
+const LK = "foe-cp:layouts";
+let LS = { cur: "Layout 1", L: {} };
+const snap = () => ({
+  e: era,
+  u: ub.map(Number).join(""),
+  i: items.map((i) => [i.d.i, i.x, i.y, i.lv || 0, i.er == null ? null : i.er]),
+});
+function apply(s) {
+  msel.clear();
+  era = s.e;
+  ub = [...s.u].map((c) => c == "1");
+  items = s.i
+    .map((a) => {
+      if (a[0] == "ST1" || a[0] == "ST2") {
+        const k = defStreet(+a[0][2], a[4] != null ? a[4] : s.e);
+        return k ? [k.i, a[1], a[2], 0, null] : a;
+      }
+      return a;
+    })
+    .filter((a) => by[a[0]])
+    .map((a) => mk(by[a[0]], a[1], a[2], a[3], a[4]));
+}
+function persist() {
+  try {
+    localStorage.setItem(LK, JSON.stringify(LS));
+  } catch {}
+}
+let HU = [],
+  HR = [],
+  hc = null;
+const hbtn = () => {
+  $("un").disabled = !HU.length;
+  $("re").disabled = !HR.length;
+};
+function hinit() {
+  HU = [];
+  HR = [];
+  hc = JSON.stringify(snap());
+  hbtn();
+}
+function save() {
+  const s = snap();
+  LS.L[LS.cur] = s;
+  persist();
+  const j = JSON.stringify(s);
+  if (j !== hc) {
+    if (hc != null) {
+      HU.push(hc);
+      if (HU.length > 200) HU.shift();
+    }
+    HR = [];
+    hc = j;
+    hbtn();
+  }
+}
+function hgo(from, to, msg) {
+  if (!from.length) {
+    $("st").textContent = tl(msg);
+    return;
+  }
+  to.push(hc);
+  hc = from.pop();
+  const s = JSON.parse(hc);
+  pick = null;
+  apply(s);
+  LS.L[LS.cur] = s;
+  persist();
+  hbtn();
+  show();
+  lvShow();
+}
+$("un").onclick = () => hgo(HU, HR, "hist.nothingUndo");
+$("re").onclick = () => hgo(HR, HU, "hist.nothingRedo");
+addEventListener("keydown", (e) => {
+  if (!(e.ctrlKey || e.metaKey) || /INPUT|SELECT|TEXTAREA/.test((e.target || {}).nodeName)) return;
+  const k = e.key.toLowerCase();
+  if (k == "z") {
+    e.preventDefault();
+    (e.shiftKey ? $("re") : $("un")).click();
+  } else if (k == "y") {
+    e.preventDefault();
+    $("re").click();
+  }
+});
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LK));
+    if (s && s.L && s.L[s.cur]) {
+      LS = s;
+      apply(s.L[s.cur]);
+      return true;
+    }
+    const o = JSON.parse(localStorage.getItem(KEY));
+    if (o) {
+      apply(o);
+      return items.length > 0;
+    }
+  } catch {}
+  return false;
+}
+function layUI() {
+  const l = $("lay");
+  l.innerHTML = "";
+  Object.keys(LS.L).forEach((n) => {
+    const o = document.createElement("option");
+    o.textContent = n;
+    o.value = n;
+    l.appendChild(o);
+  });
+  l.value = LS.cur;
+}
+function show() {
+  $("era").value = era;
+  calc();
+  draw();
+  layUI();
+}
+function askName(m, d) {
+  const n = (prompt(m, d || "") || "").trim();
+  if (!n) return null;
+  if (LS.L[n]) {
+    alert(tl("dlg.nameExists"));
+    return null;
+  }
+  return n;
+}
+$("lay").onchange = (e) => {
+  save();
+  LS.cur = e.target.value;
+  apply(LS.L[LS.cur]);
+  persist();
+  hinit();
+  show();
+};
+$("ln").onclick = () => {
+  const n = askName(tl("dlg.newLayoutName"));
+  if (!n) return;
+  save();
+  LS.cur = n;
+  reset();
+  hc = null;
+  save();
+  hinit();
+  show();
+};
+$("lc").onclick = () => {
+  const n = askName(tl("dlg.copyName"), LS.cur + " " + tl("dlg.copySuffix"));
+  if (!n) return;
+  save();
+  LS.L[n] = JSON.parse(JSON.stringify(LS.L[LS.cur]));
+  LS.cur = n;
+  persist();
+  hinit();
+  layUI();
+};
+$("lr").onclick = () => {
+  const n = askName(tl("dlg.newName"), LS.cur);
+  if (!n) return;
+  save();
+  LS.L[n] = LS.L[LS.cur];
+  delete LS.L[LS.cur];
+  LS.cur = n;
+  persist();
+  layUI();
+};
+$("ld").onclick = () => {
+  if (!confirm(LG === "de" ? 'Layout "' + LS.cur + '" löschen?' : 'Delete layout "' + LS.cur + '"?')) return;
+  delete LS.L[LS.cur];
+  const k = Object.keys(LS.L);
+  if (k.length) {
+    LS.cur = k[0];
+    apply(LS.L[LS.cur]);
+  } else {
+    LS.cur = "Layout 1";
+    reset();
+    LS.L[LS.cur] = snap();
+  }
+  persist();
+  hinit();
+  show();
+};
+</script><script>
+// Planer, Teil: Raster (grid), Straßennetz/Aktivstatus (calc), Gebäudeliste (blist)
+// Früher Teil von js/city.js; Ladereihenfolge: siehe <script>-Tags in city.html.
+function grid() {
+  const m = new Int16Array(N * N).fill(-1);
+  items.forEach((it, k) => {
+    for (let j = 0; j < it.l; j++)
+      for (let i = 0; i < it.w; i++) {
+        const x = it.x + i,
+          y = it.y + j;
+        if (x < N && y < N) m[y * N + x] = k;
+      }
+  });
+  return m;
+}
+function calc() {
+  msel.forEach((i) => items.includes(i) || msel.delete(i));
+  g = grid();
+  const adj = items.map(() => new Set());
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const a = g[y * N + x];
+      if (a < 0) continue;
+      if (x < N - 1) {
+        const b = g[y * N + x + 1];
+        if (b >= 0 && b != a) {
+          adj[a].add(b);
+          adj[b].add(a);
+        }
+      }
+      if (y < N - 1) {
+        const b = g[(y + 1) * N + x];
+        if (b >= 0 && b != a) {
+          adj[a].add(b);
+          adj[b].add(a);
+        }
+      }
+    }
+  const th = items.findIndex((i) => i.d.t == "main_building");
+  const bfs = (lv) => {
+    const s = new Set();
+    if (th < 0) return s;
+    const q = [th];
+    while (q.length) {
+      const u = q.pop();
+      for (const v of adj[u])
+        if (!s.has(v) && items[v].d.t == "street" && items[v].d.s >= lv) {
+          s.add(v);
+          q.push(v);
+        }
+    }
+    return s;
+  };
+  const n1 = bfs(1),
+    n2 = bfs(2);
+  on = items.map((it, k) => {
+    const d = it.d;
+    if (d.t == "main_building") return true;
+    if (d.t == "street") return n1.has(k);
+    if (!d.s) return true;
+    const net = d.s >= 2 ? n2 : n1;
+    if (adj[k].has(th)) return true;
+    for (const v of adj[k]) if (net.has(v)) return true;
+    return false;
+  });
+  blist();
+}
+let BG = [];
+function blist() {
+  const M = new Map();
+  items.forEach((it, k) => {
+    const st = it.d.t == "street",
+      key = st ? "~st" : it.d.i + "|" + (it.er == null ? "" : it.er) + "|" + (it.lv || 0);
+    let o = M.get(key);
+    if (!o) {
+      o = { it: it, st, n: 0, off: 0, l: [] };
+      M.set(key, o);
+    }
+    o.n++;
+    if (!on[k]) o.off++;
+    o.l.push(it);
+  });
+  BG = [...M.values()].sort((a, b) => a.st - b.st || (a.st ? 0 : nmi(a.it).localeCompare(nmi(b.it), LG)));
+  const q = BG.map((o, i) => {
+    const d = o.it.d,
+      nmx = o.st ? tl("bl.streets") : nmi(o.it),
+      sz = o.st
+        ? ""
+        : ` <span style="color:var(--muted)">${d.w}×${d.l}${d.t == "greatbuilding" && o.it.lv ? " · Lv " + o.it.lv : ""}${o.it.er != null ? " · " + eName(o.it.er) : ""}</span>`;
+    return `<tr data-g="${i}" style="cursor:pointer"><td>${nmx}${sz}${o.off ? ` <span class="g">· ${tl("bl.nInactive", { n: o.off })}</span>` : ""}</td><td>${o.n}×</td></tr>`;
+  }).join("");
+  $("bl").innerHTML = items.length ? `<table>${q}</table>` : tl("bl.none");
+}
+$("bl").onclick = (e) => {
+  const r = e.target.closest("tr[data-g]");
+  if (!r) return;
+  const o = BG[+r.dataset.g];
+  if (!o) return;
+  msel.clear();
+  o.l.forEach((i) => msel.add(i));
+  pick = msel.size == 1 ? [...msel][0] : null;
+  lvShow();
+  draw();
+  $("st").textContent = tl("sel.nameSelected", { name: o.st ? tl("bl.streets") : nmi(o.it), n: msel.size });
+};
+</script><script>
+// Planer, Teil: LG-Zeilen, Werte je Gebäude (val, itemsOf, lgRow), Beschriftungen, Summenanzeige (values)
+// Früher Teil von js/city.js; Ladereihenfolge: siehe <script>-Tags in city.html.
+const LGAL = {
+  zeusstatue: "Zeus",
+  "castel del monte": "CdM",
+  observatorium: "Obs",
+  "terrakotta-armee": "TA",
+  "cape canaveral": "CC",
+  "star gazer": "SG",
+  "saturn vi tor centaurus": "Centaurus",
+  "saturn vi tor pegasus": "Pegasus",
+  "saturn vi tor hydra": "Hydra",
+};
+function lgTab(d) {
+  if (!EF) return null;
+  const n = d.n.normalize("NFC").trim().toLowerCase(),
+    k = EF.LGA[n] || LGAL[n];
+  return (k && (EF.LGV[k] || EF.LGI[k])) || null;
+}
+function lgRow(it) {
+  const V = lgTab(it.d);
+  if (!V) return null;
+  const n = V.v.length,
+    L = Math.min(it.lv || n, n),
+    row = V.v[L - 1],
+    c = {};
+  V.i.forEach((q, j) => {
+    if (row[j]) c[q] = row[j];
+  });
+  return c;
+}
+function val(it) {
+  const d = it.d;
+  if (d.t == "street") return d.h ? { 23: d.h } : null;
+  if (!EF) return null;
+  if (d.t == "greatbuilding") return lgRow(it);
+  const i = EF.ix[d.i];
+  if (i == null) return null;
+  const c = { ...EF.D.b[i][8] },
+    x = EF.ER.d[i],
+    k = Math.max(0, Math.min(22, ef(it) - 1));
+  if (x)
+    for (let j = 0; j < x.length; j += 2) {
+      const v = EF.ER.p[x[j + 1]][k];
+      v ? (c[x[j]] = v) : delete c[x[j]];
+    }
+  return c;
+}
+const stem = (e) =>
+  e
+    .toLowerCase()
+    .replace(/[’‘`']/g, "")
+    .replace(/[^\p{L}\p{N}%\s\[\]-]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((t) => (t.length > 3 && t.endsWith("s") && !t.endsWith("ss") ? t.slice(0, -1) : t))
+    .join(" ");
+function itemsOf(it) {
+  const d = it.d;
+  if (!EF || d.t == "greatbuilding") return [];
+  const t = EF.IT[d.i];
+  if (!t) return [];
+  const x = EF.ITE[d.i],
+    k = Math.max(0, Math.min(22, ef(it) - 1)),
+    o = [];
+  t.forEach((l) => {
+    const m = l.match(/^(.+) – ([\d.]+)(?:\/([\d.]+))?$/);
+    if (!m) {
+      o.push({ n: l, a: 0, m: 0, raw: 1 });
+      return;
+    }
+    let a = +m[2];
+    if (x) {
+      const v = x[stem(m[1])];
+      if (v) {
+        if (!v.n[k]) return;
+        a = v.n[k];
+      }
+    }
+    o.push({ n: m[1], a, m: m[3] ? +m[3] : 0 });
+  });
+  return o;
+}
+
+function itSumHtml(IS) {
+  const dn = (n) => (LG === "de" ? itd(n) || n : n);
+  const names = Object.keys(IS).sort((a, b) => dn(a).localeCompare(dn(b), LG));
+  if (!names.length) return "";
+  const f = (n) => Number(n).toLocaleString("de-DE", { maximumFractionDigits: 2 });
+  let h =
+    '<div style="margin-top:8px;font-weight:600;color:var(--accent,#7fb2e5)">' + tl("val.itemsTotal") + "</div><table>";
+  names.forEach((n) => {
+    const s = IS[n],
+      ks = Object.keys(s.F).sort((a, b) => a - b);
+    if (!ks.length) h += `<tr><td>${dn(n)}</td><td>${s.raw && !s.W ? "" : f(s.W)}</td></tr>`;
+    else {
+      ks.forEach((m) => (h += `<tr><td>${dn(n)}</td><td>${f(s.F[m])}/${m}</td></tr>`));
+      if (s.W) h += `<tr><td>${dn(n)} ${tl("val.whole")}</td><td>${f(s.W)}</td></tr>`;
+    }
+  });
+  return h + "</table>";
+}
+const ef = (it) => (it.er != null ? it.er : era);
+const bEra = (d) => {
+  const m = /^[A-Z]_([A-Za-z]+?)_/.exec(d.i || "");
+  const k = m ? E.indexOf(m[1]) : -1;
+  return k >= 0 ? k : null;
+};
+const eName = (k) => EN[k];
+const nmi = (it) => nm(it.d);
+const defStreet = (l, e) =>
+  C.items
+    .filter((i) => i.t == "street" && !i.x && i.s == l && i.e <= (e == null ? era : e))
+    .sort((a, b) => b.e - a.e || a.n.localeCompare(b.n, "de"))[0] || C.items.find((i) => i.t == "street" && i.s == l);
+const LGLE = {
+  "Mäzenbonus (FP-Wert)": "Patron bonus (FP value)",
+  "Doppelt einsammeln: Gebäude": "Double collection: buildings",
+  "Doppelt einsammeln: Chance": "Double collection: chance",
+  "Erstschlag: Versuche": "First strike: attempts",
+  "Erstschlag: Chance": "First strike: chance",
+  "Raketenstart: Versuche": "Rocket launch: attempts",
+  "Raketenstart: Chance": "Rocket launch: chance",
+  "Item-Wert (laut Tabelle)": "Item value (per table)",
+  "Spezialgüter (Weltraumfrachter)": "Special goods (space freighter)",
+  "Güter (Plünderung)": "Goods (plunder)",
+};
+const lbl = (q) =>
+  q < 60
+    ? (LG === "de" ? SLD : SL)[q]
+    : EF && EF.LGL[q - 60]
+      ? LG === "de"
+        ? EF.LGL[q - 60][0]
+        : LGLE[EF.LGL[q - 60][0]] || EF.LGL[q - 60][0]
+      : null;
+function fmt(n) {
+  return Math.abs(n) < 10
+    ? n.toLocaleString("de-DE", { maximumFractionDigits: 2 })
+    : Math.round(n).toLocaleString("de-DE");
+}
+// Markierung schwacher Gebäude: Effizienz = gewichteter Wert / Fläche (Gewichte aus dem Effizienz-Tab, sonst Standard; ohne Item-Wert)
+let MKS = new Set();
+// Schwelle: gespeicherte Zahl (Komma oder Punkt), leer = aus
+const mkThr = () => {
+  try {
+    const v = parseFloat(String(localStorage.getItem("cityMkT") || "").replace(",", "."));
+    return isNaN(v) ? null : v;
+  } catch (e) {
+    return null;
+  }
+};
+function mkOpts() {
+  const s = $("mk"),
+    v = mkThr();
+  s.placeholder = tl("mk.ph");
+  s.value = v == null ? "" : String(v).replace(".", LG == "de" ? "," : ".");
+  $("mkl").textContent = tl("mk.label");
+}
+function mkWeights() {
+  let w = [];
+  try {
+    w = JSON.parse(localStorage.getItem("foeff:w")) || [];
+  } catch (e) {}
+  return (q) => (typeof w[q] == "number" ? w[q] : q < 60 ? EF.D.w[q] : (EF.LGL[q - 60] || [0, 0])[1]) || 0;
+}
+// Item-Wert wie im Effizienz-Tab (iv/ie): Grundwert + Abweichung der eigenen Item-Gewichte + zeitalterabhängige Items
+const mkPI = {};
+function mkItems(id) {
+  return (
+    mkPI[id] ||
+    (mkPI[id] = (EF.IT[id] || [])
+      .map((t) => {
+        const n = t.match(/^(.+) – ([\d.]+)(?:\/([\d.]+))?$/);
+        return n ? [stem(n[1]), n[3] ? n[2] / n[3] : +n[2]] : 0;
+      })
+      .filter(Boolean))
+  );
+}
+function mkItemVal(it, IWo) {
+  const d = it.d;
+  if (d.t == "greatbuilding") return 0;
+  const i = EF.ix[d.i];
+  if (i == null) return 0;
+  const k = Math.max(0, Math.min(22, ef(it) - 1)),
+    p = mkItems(d.i),
+    x = EF.ITE[d.i];
+  let t = EF.D.b[i][6] || 0;
+  for (const n in IWo) for (const [s, a] of p) s == n && (t += (IWo[n] - (EF.IW0[n] || 0)) * a);
+  if (x)
+    for (const [s, a] of p) {
+      const v = x[s];
+      if (v) t += (v.n[k] / v.m - a) * (IWo[s] == null ? EF.IW0[s] || 0 : IWo[s]);
+    }
+  return t;
+}
+const mkStreet = (it) => {
+  if (it.d.t == "greatbuilding" || !EF) return 0;
+  const i = EF.ix[it.d.i];
+  return i == null ? 0 : EF.D.b[i][5] || 0;
+};
+function mkCalc(rows) {
+  MKS = new Set();
+  const thr = mkThr();
+  if (thr == null || !rows.length) return "";
+  const W = mkWeights();
+  let IWo = {};
+  try {
+    IWo = JSON.parse(localStorage.getItem("foeff:iw")) || {};
+  } catch (e) {}
+  rows.forEach((r) => {
+    r.e = (Object.keys(r.v).reduce((s, q) => s + W(+q) * r.v[q], 0) + mkItemVal(r.it, IWo)) / r.a;
+  });
+  rows.sort((x, y) => x.e - y.e);
+  const tot = rows.reduce((s, r) => s + r.a, 0),
+    G = new Map();
+  let c = 0;
+  for (const r of rows) {
+    if (!(r.e < thr)) break;
+    c += r.a;
+    MKS.add(r.it);
+    const k = r.it.d.i + "|" + ef(r.it),
+      g = G.get(k);
+    g ? g.n++ : G.set(k, { it: r.it, n: 1, e: r.e });
+  }
+  return (
+    `<div style="margin:6px 0"><b style="color:#ff6b6b">${tl("mk.summary", { n: MKS.size, t: thr.toLocaleString("de-DE", { maximumFractionDigits: 2 }), p: fmt((c / tot) * 100) })}</b>` +
+    [...G.values()]
+      .slice(0, 12)
+      .map((g) => `<div class="m">${g.n}× ${nmi(g.it)} · ${tl("mk.eff")} ${fmt(g.e)}</div>`)
+      .join("") +
+    (G.size > 12 ? `<div class="m">… ${G.size - 12}</div>` : "") +
+    `<div style="color:var(--muted);font-size:11px">${tl("mk.note")}</div></div>`
+  );
+}
+function values() {
+  const mkRows = [];
+  let area = 0,
+    tot = 0,
+    act = 0,
+    ina = 0,
+    st = 0,
+    nv = 0,
+    S = {},
+    IS = {};
+  ub.forEach((u) => u && (tot += 16));
+  items.forEach((it, k) => {
+    area += it.w * it.l;
+    if (it.d.t == "street") st++;
+    if (!on[k]) {
+      ina++;
+      return;
+    }
+    act++;
+    itemsOf(it).forEach((o) => {
+      const e = IS[o.n] || (IS[o.n] = { W: 0, F: {}, raw: 0 });
+      if (o.raw) e.raw = 1;
+      else if (o.m) e.F[o.m] = (e.F[o.m] || 0) + o.a;
+      else e.W += o.a;
+    });
+    const v = val(it);
+    if (!v) {
+      if (it.d.t != "street" && it.d.t != "main_building" && it.d.t != "decoration") nv++;
+      return;
+    }
+    for (const q in v) S[q] = (S[q] || 0) + v[q];
+    if (it.d.t != "street" && it.d.t != "main_building") mkRows.push({ it, v, a: it.w * it.l + mkStreet(it) });
+  });
+  const mkHtml = EF ? mkCalc(mkRows) : "";
+  const row = (a, b, c) => `<tr><td>${a}</td><td${c ? ` class="${c}"` : ""}>${b}</td></tr>`;
+  $("val").innerHTML =
+    mkHtml +
+    "<table>" +
+    row(tl("val.area"), `${area} / ${tot - area} / ${tot}`) +
+    row(
+      tl("val.expansions"),
+      tl("val.nOfM", { n: ub.filter(Boolean).length - 16, m: maxB.filter(Boolean).length - 16 }),
+    ) +
+    row(tl("val.buildingsActive"), `${act} / ${ina}`, ina ? "g" : "") +
+    row(tl("val.streetPieces"), st) +
+    Object.keys(S)
+      .map(Number)
+      .filter((q) => lbl(q) && S[q])
+      .map((q) => row(lbl(q), fmt(S[q]), S[q] < 0 ? "g" : ""))
+      .join("") +
+    "</table>" +
+    itSumHtml(IS) +
+    '<div style="color:var(--muted);font-size:11px;margin-top:4px">' +
+    tl("val.note") +
+    (nv ? tl("val.missing", { n: nv }) : "") +
+    (EF ? "" : tl("val.loading")) +
+    ".</div>";
+}
+</script><script>
+// Planer, Teil: Zeichnen auf dem Raster (lab, draw)
+// Früher Teil von js/city.js; Ladereihenfolge: siehe <script>-Tags in city.html.
+function lab(t, x, y, w, l, fc) {
+  const mw = w - 6;
+  let fs = Math.max(9, Math.min(14, cs * 0.8));
+  for (;;) {
+    cx.font = fs + "px system-ui,sans-serif";
+    const ls = [];
+    let cur = "";
+    for (const wd of t.split(" ")) {
+      const q = cur ? cur + " " + wd : wd;
+      if (!cur || cx.measureText(q).width <= mw) cur = q;
+      else {
+        ls.push(cur);
+        cur = wd;
+      }
+    }
+    ls.push(cur);
+    const lh = fs * 1.15;
+    if ((ls.length * lh <= l - 2 && ls.every((a) => cx.measureText(a).width <= mw)) || fs <= 7) {
+      const mx = Math.max(1, Math.floor((l - 2) / lh));
+      let o = ls.slice(0, mx);
+      if (ls.length > mx) o[mx - 1] += "…";
+      o = o.map((a) => {
+        while (a.length > 1 && cx.measureText(a).width > mw) a = a.slice(0, -2) + "…";
+        return a;
+      });
+      cx.fillStyle = fc || "#111";
+      cx.textBaseline = "middle";
+      cx.textAlign = "center";
+      const y0 = y + l / 2 - ((o.length - 1) * lh) / 2;
+      o.forEach((a, i) => cx.fillText(a, x + w / 2, y0 + i * lh));
+      cx.textAlign = "left";
+      return;
+    }
+    fs -= 1;
+  }
+}
+function draw(fast) {
+  const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3, 4096 / (N * cs))),
+    px = Math.round(N * cs * dpr);
+  cv.width = cv.height = px;
+  cv.style.width = cv.style.height = N * cs + "px";
+  cx.setTransform(px / (N * cs), 0, 0, px / (N * cs), 0, 0);
+  for (let b = 0; b < B * B; b++) {
+    if (!maxB[b]) continue;
+    const x = (b % B) * 4 * cs,
+      y = ((b / B) | 0) * 4 * cs;
+    cx.fillStyle = ub[b] ? "#8fae7a" : "#566849";
+    cx.fillRect(x, y, 4 * cs, 4 * cs);
+  }
+  cx.strokeStyle = "rgba(20,35,15,.5)";
+  cx.lineWidth = 1;
+  cx.beginPath();
+  for (let b = 0; b < B * B; b++)
+    if (maxB[b] && !ub[b]) {
+      const x0 = (b % B) * 4 * cs,
+        y0 = ((b / B) | 0) * 4 * cs;
+      cx.rect(x0 + 0.5, y0 + 0.5, 4 * cs - 1, 4 * cs - 1);
+    }
+  cx.stroke();
+  cx.strokeStyle = "rgba(30,50,25,.45)";
+  cx.lineWidth = 1;
+  cx.beginPath();
+  for (let b = 0; b < B * B; b++)
+    if (ub[b]) {
+      const x0 = (b % B) * 4,
+        y0 = ((b / B) | 0) * 4;
+      for (let i = 0; i <= 4; i++) {
+        cx.moveTo((x0 + i) * cs + 0.5, y0 * cs);
+        cx.lineTo((x0 + i) * cs + 0.5, (y0 + 4) * cs);
+        cx.moveTo(x0 * cs, (y0 + i) * cs + 0.5);
+        cx.lineTo((x0 + 4) * cs, (y0 + i) * cs + 0.5);
+      }
+    }
+  cx.stroke();
+  items.forEach((it, k) => {
+    const d = it.d,
+      x = it.x * cs,
+      y = it.y * cs,
+      w = it.w * cs,
+      l = it.l * cs;
+    cx.fillStyle = on[k]
+      ? d.t == "greatbuilding"
+        ? "#ffffff"
+        : d.t == "main_building"
+          ? COL.main_building
+          : d.t == "street"
+            ? COL.street
+            : "#2f9e4f"
+      : "#4b4e56";
+    cx.globalAlpha = 1;
+    cx.fillRect(x + 0.5, y + 0.5, w - 1, l - 1);
+    cx.globalAlpha = 1;
+    cx.strokeStyle = "rgba(0,0,0,.5)";
+    cx.strokeRect(x + 0.5, y + 0.5, w - 1, l - 1);
+    if (MKS.has(it)) {
+      cx.fillStyle = "rgba(255,60,60,.4)";
+      cx.fillRect(x + 0.5, y + 0.5, w - 1, l - 1);
+      cx.strokeStyle = "#ff3b3b";
+      cx.lineWidth = 2;
+      cx.strokeRect(x + 1.5, y + 1.5, w - 3, l - 3);
+      cx.lineWidth = 1;
+    }
+    if (cs >= 10 && w >= 34 && l >= cs * 1.5)
+      lab(
+        nmi(it),
+        x,
+        y,
+        w,
+        l,
+        on[k] ? (d.t == "greatbuilding" || d.t == "street" || d.t == "main_building" ? "#111" : "#fff") : "#e4e6ea",
+      );
+  });
+  msel.forEach((it) => {
+    cx.strokeStyle = "#ffd23f";
+    cx.lineWidth = 2;
+    cx.strokeRect(it.x * cs + 1, it.y * cs + 1, it.w * cs - 2, it.l * cs - 2);
+  });
+  if (pick && items.includes(pick)) {
+    cx.strokeStyle = "#fff";
+    cx.lineWidth = 2;
+    cx.strokeRect(pick.x * cs + 1, pick.y * cs + 1, pick.w * cs - 2, pick.l * cs - 2);
+  }
+  if (plan)
+    plan.r.forEach((r) => {
+      cx.fillStyle = r.c;
+      cx.fillRect(r.x * cs, r.y * cs, r.w * cs, r.l * cs);
+    });
+  if (!fast) {
+    values();
+    palette();
+  }
+}
+</script><script>
+// Planer, Teil: Maus/Zeiger auf dem Raster: cell, free, Automatische Planung (mkplan), Verschieben (mvplan)
+// Früher Teil von js/city.js; Ladereihenfolge: siehe <script>-Tags in city.html.
+function cell(ev) {
+  const r = cv.getBoundingClientRect();
+  return [
+    Math.min(N - 1, Math.max(0, Math.floor((ev.clientX - r.left) / cs))),
+    Math.min(N - 1, Math.max(0, Math.floor((ev.clientY - r.top) / cs))),
+  ];
+}
+function free(w, l, x, y, m) {
+  if (x < 0 || y < 0 || x + w > N || y + l > N) return false;
+  for (let j = 0; j < l; j++)
+    for (let i = 0; i < w; i++) {
+      const X = x + i,
+        Y = y + j;
+      if (!ub[(Y >> 2) * B + (X >> 2)] || m[Y * N + X] !== -1) return false;
+    }
+  return true;
+}
+function mkplan(a, b) {
+  const x0 = Math.min(a[0], b[0]),
+    y0 = Math.min(a[1], b[1]),
+    x1 = Math.max(a[0], b[0]),
+    y1 = Math.max(a[1], b[1]);
+  const OK = "rgba(255,255,255,.45)",
+    NO = "rgba(230,60,60,.55)";
+  if (tool == "exp" || tool == "xexp") {
+    const cand = [];
+    for (let r = y0 >> 2; r <= y1 >> 2; r++)
+      for (let c = x0 >> 2; c <= x1 >> 2; c++) {
+        const k = r * B + c;
+        if (
+          tool == "exp"
+            ? maxB[k] && !ub[k]
+            : ub[k] &&
+              !isMin(k) &&
+              !items.some(
+                (it) => !(it.x >= c * 4 + 4 || it.x + it.w <= c * 4 || it.y >= r * 4 + 4 || it.y + it.l <= r * 4),
+              )
+        )
+          cand.push(k);
+      }
+    let ok = cand;
+    if (tool == "exp") {
+      const u = ub.slice(),
+        res = [];
+      let ch = true;
+      while (ch) {
+        ch = false;
+        for (const k of cand) {
+          if (u[k]) continue;
+          const r = (k / B) | 0,
+            c = k % B;
+          if ((r > 0 && u[k - B]) || (r < B - 1 && u[k + B]) || (c > 0 && u[k - 1]) || (c < B - 1 && u[k + 1])) {
+            u[k] = true;
+            res.push(k);
+            ch = true;
+          }
+        }
+      }
+      ok = res;
+    }
+    return {
+      r: ok.map((k) => ({ x: (k % B) * 4, y: ((k / B) | 0) * 4, w: 4, l: 4, c: tool == "exp" ? OK : NO })),
+      act() {
+        ok.forEach((k) => (ub[k] = tool == "exp"));
+      },
+    };
+  }
+  if (tool == "sel") {
+    const hit = items.filter((it) => !(it.x > x1 || it.x + it.w <= x0 || it.y > y1 || it.y + it.l <= y0)),
+      tap = a[0] == b[0] && a[1] == b[1];
+    return {
+      r: [{ x: x0, y: y0, w: x1 - x0 + 1, l: y1 - y0 + 1, c: "rgba(255,225,77,.3)" }],
+      act() {
+        if (tap) {
+          const k = g[a[1] * N + a[0]];
+          if (k >= 0) {
+            const it = items[k];
+            msel.has(it) ? msel.delete(it) : msel.add(it);
+          } else msel.clear();
+        } else hit.forEach((it) => msel.add(it));
+        pick = msel.size == 1 ? [...msel][0] : null;
+        $("st").textContent = msel.size ? tl("sel.nSelected", { n: msel.size }) : tl("sel.none");
+      },
+    };
+  }
+  if (tool == "erase") {
+    const hit = items.filter(
+      (it) => it.d.t != "main_building" && !(it.x > x1 || it.x + it.w <= x0 || it.y > y1 || it.y + it.l <= y0),
+    );
+    return {
+      r: hit.map((it) => ({ x: it.x, y: it.y, w: it.w, l: it.l, c: NO })),
+      act() {
+        items = items.filter((i) => !hit.includes(i));
+      },
+    };
+  }
+  if (!sel) return { r: [], act() {} };
+  const d = sel,
+    u = d.u,
+    dw = d.w,
+    dl = d.l,
+    nx = u ? 1 : Math.max(1, Math.floor((x1 - x0 + 1) / dw)),
+    ny = u ? 1 : Math.max(1, Math.floor((y1 - y0 + 1) / dl)),
+    m = grid(),
+    r = [],
+    add = [];
+  if (u && items.some((i) => i.d == d)) return { r: [{ x: x0, y: y0, w: dw, l: dl, c: NO }], act() {} };
+  for (let j = 0; j < ny; j++)
+    for (let i = 0; i < nx; i++) {
+      const x = x0 + i * dw,
+        y = y0 + j * dl,
+        ok = free(dw, dl, x, y, m);
+      if (ok) {
+        for (let q = 0; q < dl; q++) for (let p = 0; p < dw; p++) m[(y + q) * N + x + p] = 9999;
+        add.push(mk(d, x, y));
+      }
+      r.push({ x, y, w: dw, l: dl, c: ok ? OK : NO });
+    }
+  return {
+    r,
+    act() {
+      items.push(...add);
+    },
+  };
+}
+function mvplan(c) {
+  const it = drag.mv,
+    grp = drag.grp,
+    x = c[0] - drag.ox,
+    y = c[1] - drag.oy,
+    dx = x - it.x,
+    dy = y - it.y,
+    m = grid();
+  grp.forEach((o) => {
+    for (let j = 0; j < o.l; j++)
+      for (let i = 0; i < o.w; i++) {
+        const X = o.x + i,
+          Y = o.y + j;
+        if (X < N && Y < N) m[Y * N + X] = -1;
+      }
+  });
+  const ok = grp.every((o) => free(o.w, o.l, o.x + dx, o.y + dy, m));
+  return {
+    r: grp.map((o) => ({
+      x: o.x + dx,
+      y: o.y + dy,
+      w: o.w,
+      l: o.l,
+      c: ok ? "rgba(255,255,255,.5)" : "rgba(230,60,60,.55)",
+    })),
+    act() {
+      if (ok)
+        grp.forEach((o) => {
+          o.x += dx;
+          o.y += dy;
+        });
+    },
+  };
+}
+cv.addEventListener("pointerdown", (e) => {
+  if (tool == "hand") return;
+  e.preventDefault();
+  cv.setPointerCapture(e.pointerId);
+  const c = cell(e);
+  if (tool == "move") {
+    const k = g[c[1] * N + c[0]];
+    if (k < 0) {
+      drag = null;
+      return;
+    }
+    const it = items[k];
+    let grp;
+    if (msel.has(it) && msel.size > 1) grp = [...msel];
+    else {
+      msel.clear();
+      pick = it;
+      grp = [it];
+      lvShow();
+    }
+    drag = { mv: it, grp, ox: c[0] - it.x, oy: c[1] - it.y };
+    plan = mvplan(c);
+    draw();
+    return;
+  }
+  drag = c;
+  plan = mkplan(drag, drag);
+  draw();
+});
+let dragRaf = 0;
+cv.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  plan = drag.mv ? mvplan(cell(e)) : mkplan(drag, cell(e));
+  if (!dragRaf)
+    dragRaf = requestAnimationFrame(() => {
+      dragRaf = 0;
+      drag && draw(true);
+    });
+});
+cv.addEventListener("pointerup", (e) => {
+  if (tool == "hand") {
+    const [x, y] = cell(e),
+      k = g[y * N + x];
+    msel.clear();
+    pick = k >= 0 ? items[k] : null;
+    lvShow();
+    if (k >= 0) {
+      const d = items[k].d;
+      $("st").textContent =
+        `${nmi(items[k])} · ${items[k].w}×${items[k].l}` +
+        (d.s ? " · " + tl("map.streetLevel", { n: d.s }) : "") +
+        ` · ${eName(d.t == "street" ? d.e : bEra(d) != null ? bEra(d) : ef(items[k]))}` +
+        (d.t == "street" && d.h ? ` · ${lbl(23)} ${d.h}` : "") +
+        (on[k] ? "" : " · " + tl("map.inactiveNoRoad"));
+    } else $("st").textContent = tl("map.cell", { x, y });
+    return;
+  }
+  if (!drag) return;
+  plan.act();
+  drag = null;
+  plan = null;
+  calc();
+  draw();
+  save();
+  lvShow();
+});
+cv.addEventListener("pointercancel", () => {
+  drag = null;
+  plan = null;
+  draw();
+});
+</script><script>
+// Planer, Teil: Bedienung: Zeitalter-/Stufen-Auswahl, Werkzeuge, Palette, Zoom, Ereignisse
+// Früher Teil von js/city.js; Ladereihenfolge: siehe <script>-Tags in city.html.
+const streetFor = (l, k) =>
+  C.items
+    .filter((i) => i.t == "street" && !i.x && i.s == l && i.e == k)
+    .sort((a, b) => nm(a).localeCompare(nm(b), "de"))[0] || null;
+function eraShow() {
+  const b = $("erabox"),
+    sb = $("strbox"),
+    S = cur(),
+    it = S.length == 1 ? S[0] : null,
+    isS = !!it && it.d.t == "street";
+  b.hidden = !S.length || isS;
+  sb.hidden = !isS;
+  if (!S.length) return;
+  if (S.length > 1) {
+    let h = `<option value="~">${tl("era.set")}</option><option value="a">${tl("era.auto")}</option>`;
+    for (let k = 0; k < E.length; k++) h += `<option value="${k}">${eName(k)}</option>`;
+    const sl = $("erasel");
+    sl.innerHTML = h;
+    sl.value = "~";
+    sl.disabled = false;
+    $("eran").textContent = tl("sel.nSelected", { n: S.length });
+    return;
+  }
+  if (isS) {
+    const d = it.d,
+      l = C.items
+        .filter((i) => i.t == "street" && i.s == d.s && i.w == d.w && i.l == d.l && (!i.x || i == d))
+        .sort((a, b) => a.e - b.e || nm(a).localeCompare(nm(b), LG));
+    $("strsel").innerHTML = l
+      .map((i) => `<option value="${i.i}">${nm(i)} · ${eName(i.e)}${i.h ? " · ☺" + i.h : ""}</option>`)
+      .join("");
+    $("strsel").value = d.i;
+    return;
+  }
+  const d = it.d,
+    sl = $("erasel"),
+    o = (v, t) => `<option value="${v}">${t}</option>`;
+  let h = "",
+    val = "",
+    dis = false,
+    note = "";
+  if (
+    d.t == "greatbuilding" ||
+    (bEra(d) != null && d.t != "main_building" && d.t != "street" && !/MultiAge|AllAge/.test(d.i))
+  ) {
+    const k = bEra(d);
+    h = o(k == null ? "" : k, k == null ? "–" : eName(k));
+    val = k == null ? "" : k;
+    dis = true;
+    note = tl("era.fixedByBuilding");
+  } else if (d.t == "main_building") {
+    for (let k = 0; k < E.length; k++) if (by["H_" + E[k] + "_Townhall"]) h += o(k, eName(k));
+    val = era;
+    note = tl("era.cityEra");
+  } else {
+    h = o("", tl("era.autoWith", { era: eName(era) }));
+    for (let k = d.t == "street" ? 0 : 1; k < E.length; k++) h += o(k, eName(k));
+    val = it.er == null ? "" : it.er;
+  }
+  sl.innerHTML = h;
+  sl.value = val;
+  sl.disabled = dis;
+  $("eran").textContent = note;
+}
+$("strsel").onchange = (e) => {
+  const it = pick,
+    n = by[e.target.value];
+  if (!it || !items.includes(it) || !n) return;
+  it.d = n;
+  it.w = n.w;
+  it.l = n.l;
+  calc();
+  draw();
+  save();
+  eraShow();
+  $("st").textContent = `${nm(n)} · ${eName(n.e)}` + (n.h ? ` · ${lbl(23)} ${n.h}` : "");
+};
+$("erasel").onchange = (e) => {
+  const v = e.target.value,
+    S = cur();
+  if (S.length > 1) {
+    if (v == "~") return;
+    const k = v == "a" ? null : +v;
+    let n = 0;
+    S.forEach((it) => {
+      const d = it.d;
+      if (d.t == "street") {
+        if (k == null) return;
+        const t = streetFor(d.s, k);
+        if (t && t != d) {
+          it.d = t;
+          it.w = t.w;
+          it.l = t.l;
+          n++;
+        }
+        return;
+      }
+      if (d.t == "main_building" || d.t == "greatbuilding" || (bEra(d) != null && !/MultiAge|AllAge/.test(d.i))) return;
+      if (k === 0) return;
+      const ne = k == null ? undefined : k;
+      if (it.er !== ne) {
+        it.er = ne;
+        n++;
+      }
+    });
+    calc();
+    draw();
+    save();
+    eraShow();
+    $("st").textContent = tl("era.nOfChanged", { n, total: S.length });
+    return;
+  }
+  const it = pick;
+  if (!it || !items.includes(it)) return;
+  if (it.d.t == "main_building") {
+    $("era").value = v;
+    $("era").onchange({ target: $("era") });
+    eraShow();
+    return;
+  }
+  it.er = v === "" ? undefined : +v;
+  calc();
+  draw();
+  save();
+  eraShow();
+  $("st").textContent = `${nmi(it)} · ${eName(ef(it))}`;
+};
+function lvShow() {
+  eraShow();
+  const b = $("lvbox"),
+    on = pick && pick.d.t == "greatbuilding";
+  b.hidden = !on;
+  if (on) {
+    const V = lgTab(pick.d);
+    $("lv").value = pick.lv || (V ? V.v.length : "");
+    $("lvn").textContent = V ? tl("val.tableUpTo", { n: V.v.length }) : tl("val.noTable");
+  }
+}
+$("lv").onchange = (e) => {
+  if (pick) {
+    pick.lv = Math.max(1, +e.target.value || 1);
+    calc();
+    draw();
+    save();
+  }
+};
+function setTool(t) {
+  tool = t;
+  if (t == "street" && !(sel && sel.t == "street")) sel = defStreet(1);
+  if (t == "build" && sel && sel.t == "street") sel = null;
+  cv.style.touchAction = t == "hand" ? "auto" : "none";
+  document.querySelectorAll("#top [data-t]").forEach((b) => b.classList.toggle("on", b.dataset.t == t));
+  $("st").textContent = tl("tool." + t);
+  palette();
+}
+document.querySelectorAll("#top [data-t]").forEach((b) => (b.onclick = () => setTool(b.dataset.t)));
+const inTools = (i) =>
+  !/ONBOARD/.test(i.i || "") &&
+  (!EF || i.t == "street" || i.t == "main_building" || EF.ix[i.i] != null || (i.t == "greatbuilding" && !!lgTab(i)));
+function palette() {
+  const p = $("pal"),
+    q = $("q").value.toLowerCase(),
+    cat = $("cat").value,
+    only = $("only").checked,
+    isSt = tool == "street";
+  if (tool != "build" && !isSt) {
+    p.innerHTML = "";
+    return;
+  }
+  let l = C.items.filter(
+    (i) =>
+      i.t != "main_building" &&
+      inTools(i) &&
+      (isSt ? i.t == "street" && !i.x : i.t != "street") &&
+      (i.e == null || (only ? i.e == era : i.e <= era)) &&
+      (!q || i.n.toLowerCase().includes(q) || nm(i).toLowerCase().includes(q)),
+  );
+  if (!isSt && cat)
+    l = l.filter((i) =>
+      cat == "x"
+        ? !["residential", "culture", "production", "goods", "military", "decoration", "greatbuilding"].includes(i.t)
+        : i.t == cat,
+    );
+  l.sort(
+    isSt
+      ? (a, b) => b.e - a.e || a.s - b.s || nm(a).localeCompare(nm(b), LG)
+      : (a, b) => nm(a).localeCompare(nm(b), LG),
+  );
+  const tot = l.length;
+  p.innerHTML =
+    l
+      .slice(0, 80)
+      .map(
+        (i) =>
+          `<button data-i="${i.i}" class="${sel == i ? "on" : ""}" ${i.u && items.some((x) => x.d == i) ? "disabled" : ""}>${i.u ? "⭐ " : ""}${nm(i)} ${i.w}×${i.l}${i.s ? " 🛣" + i.s : ""}${i.t == "street" && i.h ? " ☺" + i.h : ""}</button>`,
+      )
+      .join("") + (tot > 80 ? `<span style="color:var(--muted)">${tl("pal.more", { n: tot - 80 })}</span>` : "");
+}
+$("pal").onclick = (e) => {
+  const b = e.target.closest("button");
+  if (b) {
+    sel = by[b.dataset.i];
+    palette();
+  }
+};
+["q", "cat", "only"].forEach((i) => ($(i).oninput = palette));
+$("era").onchange = (e) => {
+  era = +e.target.value;
+  const t = items.find((i) => i.d.t == "main_building"),
+    n = thFor(era);
+  if (t && n && t.d != n) {
+    const o = [t.d, t.w, t.l];
+    t.d = n;
+    t.w = n.w;
+    t.l = n.l;
+    if (!free2(t)) {
+      [t.d, t.w, t.l] = o;
+    }
+  }
+  calc();
+  draw();
+  save();
+  eraShow();
+};
+function free2(t) {
+  const m = grid();
+  const k = items.indexOf(t);
+  for (let j = 0; j < t.l; j++)
+    for (let i = 0; i < t.w; i++) {
+      const X = t.x + i,
+        Y = t.y + j;
+      if (X >= N || Y >= N || !ub[(Y >> 2) * B + (X >> 2)]) return false;
+      const o = m[Y * N + X];
+      if (o !== -1 && o !== k) return false;
+    }
+  return true;
+}
+function zoom(f) {
+  cs = Math.max(5, Math.min(30, Math.round(cs * f)));
+  draw();
+}
+function fit() {
+  cs = Math.max(5, Math.min(30, Math.floor(Math.min($("wrap").clientWidth, $("wrap").clientHeight) / N)));
+  draw();
+}
+$("fit").onclick = fit;
+$("zi").onclick = () => zoom(1.25);
+$("zo").onclick = () => zoom(0.8);
+$("rs").onclick = () => {
+  if (confirm(tl("dlg.resetCity"))) {
+    reset();
+    calc();
+    draw();
+    save();
+  }
+};
+$("imp").onclick = () => $("file").click();
+$("exp").onclick = () => {
+  const M = {};
+  items.forEach((it, k) => {
+    const o = { id: k + 1, cityentity_id: it.d.i, type: it.d.t, x: it.x, y: it.y };
+    if (it.lv) o.level = it.lv;
+    if (it.er != null) o._er = it.er;
+    M[k + 1] = o;
+  });
+  const A = [];
+  ub.forEach((v, b) => {
+    if (v) A.push({ x: (b % B) * 4, y: ((b / B) | 0) * 4, width: 4, length: 4 });
+  });
+  const t = JSON.stringify({
+    CityMapData: M,
+    UnlockedAreas: A,
+    _foeTools: { layout: LS.cur, era: E[era], version: 1 },
+  });
+  const nm = "city_planner_export_" + String(LS.cur).replace(/[^\w.-]+/g, "_") + ".json";
+  try {
+    const u = URL.createObjectURL(new Blob([t], { type: "application/json" })),
+      a = document.createElement("a");
+    a.href = u;
+    a.download = nm;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 2000);
+    $("st").textContent = tl("io.exportedNamed", { name: nm, n: items.length });
+  } catch {
+    try {
+      navigator.clipboard.writeText(t);
+      $("st").textContent = tl("io.exportedCopied");
+    } catch {
+      $("st").textContent = tl("io.exportFailed");
+    }
+  }
+};
+
+$("file").onchange = async (e) => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  $("st").textContent = tl("io.importing");
+  try {
+    let t = await f.text();
+    const i = t.indexOf(',"CityEntities"');
+    if (i > 0) t = t.slice(0, i) + "}";
+    const d = JSON.parse(t),
+      // Spiel-Export „city-plan.json“ (cityData/mapData/currentEra) oder Planer-/Alt-Export (CityMapData/UnlockedAreas)
+      M = d.CityMapData || d.cityData,
+      areas = d.UnlockedAreas || d.mapData,
+      curEra = d.currentEra;
+    if (!M) throw 0;
+    const u = maxB.map((_, b) => isMin(b));
+    (areas || []).forEach((a) => {
+      const x = a.x || 0,
+        y = a.y || 0;
+      for (let r = y >> 2; r < (y + a.length) >> 2; r++)
+        for (let c = x >> 2; c < (x + a.width) >> 2; c++) if (r < B && c < B && maxB[r * B + c]) u[r * B + c] = true;
+    });
+    const its = [];
+    let skip = 0;
+    for (const v of Object.values(M)) {
+      const d = by[v.cityentity_id];
+      if (["off_grid", "outpost_ship", "hub_main", "hub_part"].includes(v.type)) continue;
+      if (!d) {
+        skip++;
+        continue;
+      }
+      {
+        const it = mk(d, v.x || 0, v.y || 0, v.level);
+        if (v._er != null) it.er = v._er;
+        // Spiel-Export: Zeitalter des Gebäudes (nur Gebäude, die vom Stadt-Zeitalter abweichen)
+        else if (v.type == "generic_building" && E.includes(v.era) && v.era != curEra) it.er = E.indexOf(v.era);
+        its.push(it);
+      }
+    }
+    const th = its.find((i) => i.d.t == "main_building");
+    if (th) {
+      const m = /^H_(.+)_Townhall$/.exec(th.d.i);
+      if (m && E.includes(m[1])) era = E.indexOf(m[1]);
+    }
+    save();
+    let nn = "Import",
+      kk = 1;
+    while (LS.L[nn]) nn = "Import " + ++kk;
+    LS.cur = nn;
+    ub = u;
+    items = its;
+    hc = null;
+    save();
+    hinit();
+    show();
+    $("st").textContent =
+      tl("io.imported", { n: its.length, blocks: ub.filter(Boolean).length }) +
+      (skip ? tl("io.skipped", { n: skip }) : "");
+  } catch {
+    $("st").textContent = tl("io.importFailed");
+  }
+};
+$("lgs").onchange = (e) => {
+  try {
+    localStorage.setItem("foeff:lang", JSON.stringify(e.target.value));
+  } catch {}
+  rdLg();
+  langUI();
+};
+</script><script>
+// Planer, Teil: Sprachumschaltung (langUI) und Start
+// Früher Teil von js/city.js; Ladereihenfolge: siehe <script>-Tags in city.html.
+function langUI() {
+  eraShow();
+  mkOpts();
+  $("lgs").value = LG;
+  eraOpts();
+  applyI18n();
+  setTool(tool);
+  lvShow();
+  draw();
+}
+// Einklappen: Werkzeugleiste, Karte, Listen-Panel und alle Abschnitte (Zustand merken)
+const TG = { top: ["top"], map: ["wrap", "st"], bot: ["bot"] };
+let tgS = {};
+try {
+  tgS = JSON.parse(localStorage.getItem("cityCol") || "{}") || {};
+} catch (e) {}
+function tgApply() {
+  for (const k in TG) {
+    TG[k].forEach((id) => $(id).classList.toggle("hid", !!tgS[k]));
+    document.querySelector(`[data-tg="${k}"]`).classList.toggle("col", !!tgS[k]);
+  }
+  try {
+    localStorage.setItem("cityCol", JSON.stringify(tgS));
+  } catch (e) {}
+}
+document.querySelectorAll("[data-tg]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      tgS[b.dataset.tg] = !tgS[b.dataset.tg];
+      tgApply();
+      if (!tgS.map) fit();
+    }),
+);
+$("tgall").onclick = () => {
+  const ds = [...document.querySelectorAll("#bot details")],
+    open = ds.some((d) => d.open);
+  ds.forEach((d) => (d.open = !open));
+};
+tgApply();
+if (!load()) reset();
+if (!LS.L[LS.cur]) LS.L[LS.cur] = snap();
+hinit();
+$("era").value = era;
+layUI();
+calc();
+setTool("hand");
+fit();
+applyI18n();
+mkOpts();
+$("mk").oninput = (e) => {
+  try {
+    localStorage.setItem("cityMkT", e.target.value);
+  } catch (x) {}
+  draw();
+};
+$("lgs").value = LG;
+// Daten der Effizienz-Tabellen anbinden (EF). Muss als letztes laufen: der Microtask startet, sobald dieses Skript fertig ist, und braucht dann calc/draw/palette aus allen Teilen.
+Promise.resolve().then(() => {
+  const D = DATA.jD,
+    ER = DATA.jEra,
+    ix = {};
+  D.b.forEach((b, i) => (ix[b[0]] = i));
+  EF = {
+    D,
+    ER,
+    ix,
+    LGA: DATA.jLGA,
+    LGV: DATA.jLGV,
+    LGI: DATA.jLGI,
+    LGL: DATA.jLGL,
+    IT: DATA.jIT,
+    ITE: DATA.jITE,
+    IW0: DATA.jIW0,
+  };
+  calc();
+  draw();
+  palette();
+});
+</script></body></html>

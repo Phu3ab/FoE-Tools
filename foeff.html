@@ -1,0 +1,2644 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1f2e"><link rel="icon" href="icon-192.png">
+<title>FoEfficiency</title>
+<style>
+:root {
+  --bg: #1a1f2e;
+  --c: #232a3d;
+  --t: #e8e6df;
+  --m: #8a92a6;
+  --a: #d4a94b;
+  --a2: #6fa8dc;
+  --b: #333d54;
+  --in: #10141f;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: linear-gradient(160deg, #1a1f2e, #141824) fixed;
+  color: var(--t);
+  font:
+    15px Segoe UI,
+    system-ui,
+    sans-serif;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+header {
+  position: sticky;
+  top: 0;
+  background: #1a1f2e;
+  z-index: 5;
+  border-bottom: 1px solid var(--b);
+}
+h1 {
+  font-size: 1.15rem;
+  margin: 0;
+  padding: 10px 14px 4px;
+  color: var(--a);
+  letter-spacing: 0.5px;
+}
+nav {
+  display: flex;
+  overflow-x: auto;
+  gap: 4px;
+  padding: 4px 10px 8px;
+}
+nav button {
+  flex: none;
+  background: var(--c);
+  color: var(--m);
+  border: 1px solid var(--b);
+  border-radius: 18px;
+  padding: 7px 14px;
+  font: inherit;
+}
+nav button.on {
+  background: var(--a2);
+  color: #10141f;
+  border-color: var(--a2);
+  font-weight: 600;
+}
+main {
+  padding: 10px 12px 40px;
+  max-width: 900px;
+  margin: auto;
+}
+input,
+select,
+textarea {
+  background: var(--in);
+  color: var(--t);
+  border: 1px solid var(--b);
+  border-radius: 8px;
+  padding: 8px;
+  font: inherit;
+  width: 100%;
+}
+.card {
+  background: var(--c);
+  border: 1px solid var(--b);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+.m {
+  color: var(--m);
+  font-size: 13px;
+}
+.e {
+  color: var(--a2);
+  font-weight: 700;
+  font-size: 17px;
+}
+.g {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 6px 10px;
+  align-items: center;
+}
+button.s {
+  background: var(--a);
+  color: #1a1f2e;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 600;
+}
+.pos {
+  color: #7fc79a;
+}
+.neg {
+  color: #e07856;
+}
+h2 {
+  font-size: 1rem;
+  margin: 16px 0 6px;
+  color: var(--a2);
+}
+.it {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--b);
+}
+.it .row {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.card.sel {
+  border-color: var(--a2);
+  box-shadow: 0 0 0 1px var(--a2);
+}
+.pick {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--b);
+  background: var(--in);
+  color: var(--m);
+}
+.chip.on {
+  background: var(--a2);
+  color: #10141f;
+  border-color: var(--a2);
+  font-weight: 600;
+}
+
+/* Kit-Farben: normal weiß, Silver silber, Golden gold */
+.m.kw,
+.kw {
+  color: #fff;
+}
+.m.ks,
+.ks {
+  color: #c0c0c0;
+}
+.m.kg,
+.kg {
+  color: #f1c232;
+}
+</style></head><body>
+<header><h1 style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="white-space:nowrap">📈 FoEfficiency</span><span style="display:flex;gap:6px;min-width:0"><select id="era" title="Zeitalter" data-i18n-title="f.era" style="width:auto;min-width:0;max-width:34vw;padding:4px 6px;font-size:.8rem;text-overflow:ellipsis"></select><select id="lg" style="width:auto;padding:4px 6px"><option value="de">DE</option><option value="en">EN</option></select></span></h1><nav id="nav"></nav></header><main id="v"></main>
+<script src="foeff-data.js"></script><script>
+// Wörterbuch foeff.html: texts = Schlüssel -> {en, de}, Platzhalter {name}; Aufruf im Code: tl(Schlüssel, {name: wert}).
+// labels = deutsche Wertnamen aus den Daten (D.labels) -> englisch; stats / unitTypes / events = englische Spiel-Namen -> deutsch.
+// Beides läuft über den DOM-Übersetzer in js/foeff-i18n.js (Daten, keine Oberflächentexte).
+(window.I18N = window.I18N || {}).foeff = {
+  "texts": {
+    "f.tab.eff": {"en": "Buildings", "de": "Gebäude"},
+    "f.tab.city": {"en": "City", "de": "Stadt"},
+    "f.tab.inv": {"en": "Inventory", "de": "Inventar"},
+    "f.tab.al": {"en": "Allies", "de": "Allies"},
+    "f.tab.tr": {"en": "GBG Trials", "de": "GBG-Trials"},
+    "f.tab.w": {"en": "Weighting", "de": "Gewichtung"},
+    "f.tab.a": {"en": "Attrition", "de": "Attrition"},
+    "f.tab.kits": {"en": "Kits", "de": "Kits"},
+    "f.kits.ph": {"en": "Search kit, building or content …", "de": "Suche Kit, Gebäude oder Inhalt …"},
+    "f.kits.content": {"en": "Content", "de": "Inhalt"},
+    "f.kits.from": {"en": "Produced by", "de": "Produziert von"},
+    "f.kits.unknown": {"en": "Content not recorded", "de": "Inhalt nicht erfasst"},
+    "f.kits.count": {"en": "{n} kits", "de": "{n} Kits"},
+    "f.error": {"en": "Error: ", "de": "Fehler: "},
+    "f.ph.cityPaste": {"en": "Paste entries (name⇥count per line) or JSON", "de": "Einträge kopieren (Name⇥Anzahl je Zeile) oder JSON"},
+    "f.ph.invPaste": {"en": "Inventory export (name⇥count per line) or JSON", "de": "Inventar-Export (Name⇥Anzahl je Zeile) oder JSON"},
+    "f.ph.search": {"en": "Search: name, event, prop, item …", "de": "Suche: Name, Event, Prop, Item …"},
+    "f.calc": {"en": "Calculate", "de": "Berechnen"},
+    "f.csvPick": {"en": "Choose file", "de": "Datei wählen"},
+    "f.own": {"en": "(own)", "de": "(eigen)"},
+    "f.lgTitle": {"en": "Great Buildings ({n})", "de": "Legendäre Gebäude ({n})"},
+    "f.lvlN": {"en": "Level {n}", "de": "Stufe {n}"},
+    "f.lvlMissing": {"en": "Level missing", "de": "Stufe fehlt"},
+    "f.itemsTotal": {"en": "Items (total)", "de": "Items (Summe)"},
+    "f.plusWhole": {"en": "{n} whole", "de": "{n} ganze"},
+    "f.whole": {"en": "(whole)", "de": "(ganze)"},
+    "f.lvlFromLg": {"en": "Level {n} taken from the GB Calculator.", "de": "Stufe {n} aus dem LG Rechner übernommen."},
+    "f.lvlFromImport": {"en": "Level {n} derived from the imported values.", "de": "Stufe {n} aus den Import-Werten ermittelt."},
+    "f.lvlNone": {"en": "No level found: it is 0 or missing in the GB Calculator. Enter it there and the values from the table will appear automatically.", "de": "Keine Stufe gefunden: im LG Rechner steht sie auf 0 bzw. fehlt. Dort eintragen, dann erscheinen die Werte aus der Tabelle automatisch."},
+    "f.bTotal": {"en": "Total buildings", "de": "Gebäude gesamt"},
+    "f.areaStreet": {"en": "Area incl. street", "de": "Fläche inkl. Straße"},
+    "f.hist.title": {"en": "History", "de": "Verlauf"},
+    "f.hist.delta": {"en": "Δ vs. previous (eff · buildings · area · value)", "de": "Δ zum Vorherigen (Eff. · Gebäude · Fläche · Wert)"},
+    "f.hist.note": {"en": "Different era or weights than last time – not directly comparable.", "de": "Anderes Zeitalter oder andere Gewichtung als beim letzten Mal – nicht direkt vergleichbar."},
+    "f.hist.legend": {"en": "Buildings · area · Ø eff.", "de": "Gebäude · Fläche · Ø Eff."},
+    "f.hist.clear": {"en": "Clear", "de": "Löschen"},
+    "f.hist.confirm": {"en": "Delete the history?", "de": "Verlauf löschen?"},
+    "f.avgEff": {"en": "Ø weighted efficiency", "de": "Ø gewichtete Effizienz"},
+    "f.sums": {"en": "Totals", "de": "Summen"},
+    "f.unrecognized": {"en": "Not recognized ({n})", "de": "Nicht erkannt ({n})"},
+    "f.noSize": {"en": "no size (only in totals) · ", "de": "ohne Größe (nur in Summen) · "},
+    "f.sum": {"en": "Total", "de": "Summe"},
+    "f.hits": {"en": "{n} Hits · {b} Buildings", "de": "{n} Treffer · {b} Gebäude"},
+    "f.p.statName": {"en": "Stat name (e.g. Critical Strike)", "de": "Name des Werts (z. B. Critical Strike)"},
+    "f.p.weight": {"en": "Weight per unit (0 = display only)", "de": "Gewicht je Einheit (0 = nur anzeigen)"},
+    "f.tblMax": {"en": "Table only goes up to level {n} – using the values of this level.", "de": "Tabelle reicht nur bis Stufe {n} – Werte dieser Stufe verwendet."},
+    "f.tblNew": {"en": "Table has no values for level {n} yet – using the extra values of the last known level ({m}).", "de": "Tabelle hat für Stufe {n} noch keine Werte – Zusatzwerte der letzten bekannten Stufe ({m}) verwendet."},
+    "f.unassigned": {"en": "Unassigned:", "de": "Nicht zugeordnet:"},
+    "f.prodItems": {"en": "Produced items", "de": "Produzierte Items"},
+    "f.detSize": {"en": "Size {a} + {b} street = {c} Tiles ·", "de": "Größe {a} + {b} Straße = {c} Felder ·"},
+    "f.wEff": {"en": "Weighted efficiency", "de": "Gewichtete Effizienz"},
+    "f.wSum": {"en": "Weighted total", "de": "Summe gewichtet"},
+    "f.ofWhichItems": {"en": "of which items/fragments", "de": "davon Items/Fragmente"},
+    "f.prodValues": {"en": "Production / values ·", "de": "Produktion / Werte ·"},
+    "f.noValues": {"en": "No values.", "de": "Keine Werte."},
+    "f.effByEra": {"en": "Efficiency by era", "de": "Effizienz nach Zeitalter"},
+    "f.allEvents": {"en": "All events", "de": "Alle Events"},
+    "f.allYears": {"en": "All years", "de": "Alle Jahre"},
+    "f.noTimed": {"en": "Without time-limited buildings", "de": "Ohne zeitbegrenzte Gebäude"},
+    "f.s.eff": {"en": "Efficiency", "de": "Effizienz"},
+    "f.s.total": {"en": "Total value", "de": "Gesamtwert"},
+    "f.s.name": {"en": "Name", "de": "Name"},
+    "f.s.area": {"en": "Area", "de": "Fläche"},
+    "f.s.itemVal": {"en": "Item value", "de": "Item-Wert"},
+    "f.s.sel": {"en": "Selected stats / area", "de": "Gewählte Stats / Fläche"},
+    "f.s.stats": {"en": "Stats", "de": "Stats"},
+    "f.s.clear": {"en": "Clear", "de": "Leeren"},
+    "f.s.done": {"en": "Done", "de": "Fertig"},
+    "f.s.g0": {"en": "Production & goods", "de": "Produktion & Güter"},
+    "f.s.g1": {"en": "Coins, supplies & more", "de": "Münzen, Vorräte & mehr"},
+    "f.s.g2": {"en": "Population & happiness", "de": "Bevölkerung & Zufriedenheit"},
+    "f.s.g3": {"en": "Combat", "de": "Kampf"},
+    "f.s.g4": {"en": "Quantum", "de": "Quanten"},
+    "f.sort": {"en": "Sort:", "de": "Sortieren:"},
+    "f.reverse": {"en": "Reverse order", "de": "Reihenfolge umkehren"},
+    "f.street": {"en": "street", "de": "Straße"},
+    "f.more": {"en": "{n} more – refine your search", "de": "{n} weitere – Suche verfeinern"},
+    "f.nothing": {"en": "Nothing found.", "de": "Nichts gefunden."},
+    "f.w.save": {"en": "Set as default", "de": "Standard festlegen"},
+    "f.w.discard": {"en": "Discard changes", "de": "Änderungen verwerfen"},
+    "f.w.saveConfirm": {"en": "Set the current weights as the default?", "de": "Aktuelle Gewichtung als Standard festlegen?"},
+    "f.ph.itemSearch": {"en": "Search item …", "de": "Item suchen …"},
+    "f.gbgAtk": {"en": "GBG attack bonus (%)", "de": "GBG-Angriffsbonus (%)"},
+    "f.attComfort": {"en": "Comfortable attrition", "de": "Komfortable Attrition"},
+    "f.attTarget": {"en": "Target attrition", "de": "Ziel-Attrition"},
+    "f.atkNeeded": {"en": "Additional attack bonus needed", "de": "Zusätzlicher Angriffsbonus nötig"},
+    "f.defEnemy": {"en": "Enemy defense bonus:", "de": "Verteidigungsbonus Gegner:"},
+    "f.kb.aa": {"en": "Attack (attacker)", "de": "Angriff (Angreifer)"},
+    "f.kb.da": {"en": "Defense (attacker)", "de": "Verteidigung (Angreifer)"},
+    "f.kb.ad": {"en": "Attack (defender)", "de": "Angriff (Verteidiger)"},
+    "f.kb.dd": {"en": "Defense (defender)", "de": "Verteidigung (Verteidiger)"},
+    "f.atk": {"en": "Attack", "de": "Angriff"},
+    "f.atkDef": {"en": "Attack & Defense", "de": "Angriff & Verteidigung"},
+    "f.placedLc": {"en": "placed", "de": "platziert"},
+    "f.notPlaced": {"en": "not placed", "de": "nicht platziert"},
+    "f.noBonus": {"en": "no combat bonuses", "de": "keine Kampfboni"},
+    "f.al.sp": {"en": "Special effect", "de": "Spezialeffekt"},
+    "f.al.spUt": {"en": "Unit type", "de": "Einheitentyp"},
+    "f.al.spUtN": {"en": "Unit type (next era)", "de": "Einheitentyp (nächstes Zeitalter)"},
+    "f.al.spAb": {"en": "Ability", "de": "Fähigkeit"},
+    "f.al.spCh": {"en": "Trigger chance", "de": "Auslösechance"},
+    "f.rar.common": {"en": "common", "de": "gewöhnlich"},
+    "f.rar.uncommon": {"en": "uncommon", "de": "ungewöhnlich"},
+    "f.rar.rare": {"en": "rare", "de": "selten"},
+    "f.rar.epic": {"en": "epic", "de": "episch"},
+    "f.rar.legendary": {"en": "legendary", "de": "legendär"},
+    "f.al.spEv": {"en": "Expected value", "de": "Erwartungswert"},
+    "f.selection": {"en": "Selection ({a} of {b})", "de": "Auswahl ({a} von {b})"},
+    "f.placed": {"en": "Placed", "de": "Platziert"},
+    "f.all": {"en": "All", "de": "Alle"},
+    "f.none": {"en": "None", "de": "Keine"},
+    "f.kbSel": {"en": "Combat bonuses of selection (unweighted)", "de": "Kampfboni der Auswahl (ungewichtet)"},
+    "f.nothingSel": {"en": "Nothing selected.", "de": "Nichts ausgewählt."},
+    "f.al.stock": {"en": "Stock", "de": "Bestand"},
+    "f.al.matrix": {"en": "Matrix", "de": "Matrix"},
+    "f.al.calc": {"en": "Calculator", "de": "Rechner"},
+    "f.ph.allySearch": {"en": "Search ally or rarity …", "de": "Ally oder Seltenheit suchen …"},
+    "f.maxLevel": {"en": "max. Level {n}", "de": "max. Level {n}"},
+    "f.total": {"en": "Total ({n} Allies)", "de": "Gesamt ({n} Allies)"},
+    "f.combatPower": {"en": "Combat power", "de": "Kampfkraft"},
+    "f.coin.s": {"en": "Silver", "de": "Silber"},
+    "f.coin.g": {"en": "Gold", "de": "Gold"},
+    "f.coin.p": {"en": "Platinum", "de": "Platin"},
+    "f.coin.r": {"en": "Rank points", "de": "Rangpunkte"},
+    "f.coinsDayPower": {"en": "Coins per day at your combat power", "de": "Münzen pro Tag bei deiner Kampfkraft"},
+    "f.bgCoinsDay": {"en": "Battleground coins per day", "de": "Battleground-Münzen pro Tag"},
+    "f.coinsEnc": {"en": "Coins per encounter", "de": "Münzen pro Begegnung"},
+    "f.bgCoinsEnc": {"en": "Battleground coins per encounter", "de": "Battleground-Münzen pro Begegnung"},
+    "f.rpDay": {"en": "Rank points per day", "de": "Rangpunkte pro Tag"},
+    "f.bestTrials": {"en": "Best trials", "de": "Beste Trials"},
+    "f.allTrials": {"en": "All trials", "de": "Alle Trials"},
+    "f.battles": {"en": "{n} battles", "de": "{n} Kämpfe"},
+    "f.era": {"en": "Era", "de": "Zeitalter"}
+  },
+  "labels": [
+    ["Spezialgüter (Weltraumfrachter)", "Special goods (space freighter)"],
+    ["Doppelt einsammeln: Gebäude", "Double collection: buildings"],
+    ["Doppelt einsammeln: Chance", "Double collection: chance"],
+    ["Item-Wert (laut Tabelle)", "Item value (per table)"],
+    ["Raketenstart: Versuche", "Rocket launch: attempts"],
+    ["Mäzenbonus (FP-Wert)", "Patron bonus (FP value)"],
+    ["Erstschlag: Versuche", "First strike: attempts"],
+    ["Raketenstart: Chance", "Rocket launch: chance"],
+    ["Erstschlag: Chance", "First strike: chance"],
+    ["Güter (Plünderung)", "Goods (plunder)"]
+  ],
+  "stats": {
+    "Spartan Soldier": "Spartanischer Soldat",
+    "Alexander the Great": "Alexander der Große",
+    "Artemisia I of Caria": "Artemisia I. von Karien",
+    "Pompey the Great": "Pompeius der Große",
+    "Themistocles": "Themistokles",
+    "Nebuchadnezzar II": "Nebukadnezar II.",
+    "Melisende, Queen of Jerusalem": "Melisende, Königin von Jerusalem",
+    "Queen Medb": "Königin Medb",
+    "Gustavus Adolphus": "Gustav II. Adolf",
+    "Eric Bloodaxe": "Erik Blutaxt",
+    "Queen Gunnhild": "Königin Gunnhild",
+    "Matilda of Tuscany": "Mathilde von Tuszien",
+    "Jayavarman VII": "Jayavarman VII.",
+    "Margaret I of Denmark": "Margarete I. von Dänemark",
+    "Shajar al-Durr": "Schadscharat ad-Durr",
+    "Qin Shi Huang": "Qin Shihuangdi",
+    "Items": "Gegenstände",
+    "Forge Points": "Forge-Punkte",
+    "Forge Points Boost": "Forge-Punkte-Bonus",
+    "Goods": "Güter",
+    "Goods for Previous Era": "Güter (vorh. Zeitalter)",
+    "Goods for Next Era": "Güter (nächstes Zeitalter)",
+    "Unrefined Goods (Goods for 3 Eras Ago)": "Unveredelte Güter (3 Zeitalter zurück)",
+    "Goods Boost": "Güter-Bonus",
+    "Special Goods": "Spezialgüter",
+    "Special Goods Boost": "Spezialgüter-Bonus",
+    "Guild Goods": "Gildengüter",
+    "Guild Goods Boost": "Gildengüter-Bonus",
+    "Random Military Units": "Zufällige Militäreinheiten",
+    "Rogues": "Agenten",
+    "Coins": "Münzen",
+    "Coin Boost": "Münz-Bonus",
+    "Supplies": "Vorräte",
+    "Supply Boost": "Vorrats-Bonus",
+    "Medals": "Medaillen",
+    "Medal Boost": "Medaillen-Bonus",
+    "Diamonds": "Diamanten",
+    "Blueprints": "Blaupausen",
+    "Guild Power": "Gildenmacht",
+    "Population": "Bevölkerung",
+    "Happiness": "Zufriedenheit",
+    "Quantum Coin Boost": "Quanten-Münzbonus",
+    "Quantum Supply Boost": "Quanten-Vorratsbonus",
+    "Quantum Start Coins": "Quanten-Startmünzen",
+    "Quantum Start Supplies": "Quanten-Startvorräte",
+    "Quantum Start Goods": "Quanten-Startgüter",
+    "Quantum Start Units": "Quanten-Starteinheiten",
+    "Quantum Actions per Recharge Cycle": "Quanten-Aktionen/Zyklus",
+    "Quantum Actions Capacity": "Quanten-Kapazität",
+    "Critical Hit Chance": "Kritische Trefferchance",
+    "Trade Coins": "Handelsmünzen",
+    "Gemstones": "Edelsteine"
+  },
+  "events": {
+    "Anniversary": "Geburtstags-Event",
+    "Antiques Dealer": "Antiquitätenhändler",
+    "Archeology": "Archäologie",
+    "Birthday": "Geburtstag (einmalig)",
+    "Care For Tomorrow": "Nachhaltigkeits-Event",
+    "Carnival": "Karneval",
+    "Custom Set": "Eigenes Set",
+    "Easter": "Ostern",
+    "Fall": "Herbst",
+    "Fellowship": "Gemeinschaftsevent",
+    "Forge Bowl": "Forge Bowl",
+    "Guild Battlegrounds": "Gilden-Gefechte",
+    "Guild Expeditions": "Gilden-Expeditionen",
+    "Guild vs. Guild": "Gilde gegen Gilde",
+    "Halloween": "Halloween",
+    "Historical Allies": "Historische Verbündete",
+    "Historical Questline": "Historische Questreihen",
+    "History": "Geschichts-Event",
+    "King Arthur": "König Artus",
+    "Legacy Invite Reward": "Einladungsbelohnung (Alt)",
+    "May Day Festival": "Maibaum-Event",
+    "Memorial Event": "Gedenk-Event",
+    "Promotion": "Aktion",
+    "Quantum Incursions": "Quanten-Invasion",
+    "Settlement: Ancient Egypt": "Siedlung: Altes Ägypten",
+    "Settlement: Aztecs": "Siedlung: Azteken",
+    "Settlement: Feudal Japan": "Siedlung: Feudales Japan",
+    "Settlement: Mughal Empire": "Siedlung: Mogulreich",
+    "Settlement: Pirates": "Siedlung: Piraten",
+    "Settlement: Polynesia": "Siedlung: Polynesien",
+    "Settlement: Vikings": "Siedlung: Wikinger",
+    "Soccer": "Fußball-Meisterschaft",
+    "Spring": "Frühling",
+    "St Patrick's Day": "St. Patrick's Day",
+    "Summer": "Sommer",
+    "Valentine's Day": "Valentinstag",
+    "Viking": "Wikinger",
+    "Winter": "Winter",
+    "Wildlife": "Wildpark-Event",
+    "EMA Bonus Questline": "FM Bonus-Questreihen"
+  }
+};
+</script><script>
+// Wörterbücher für items (Deutsch = Quelltext im Code, Englisch = Ziel; siehe docs/HANDOFF.md)
+(window.I18N = window.I18N || {}).items = {
+  "ITX": {
+    "One Up Kit": "One-Up-Kit",
+    "Mass Self-Aid Kit": "Massen-Selbsthilfe-Kit",
+    "Self-Aid Kit": "Selbsthilfe-Kit",
+    "Renovation Kit": "Renovierungs-Kit",
+    "Renovation Kits": "Renovierungs-Kits",
+    "Store Building": "Gebäude einlagern",
+    "Ranking Points": "Rangpunkte",
+    "Random Special Building Fragments": "Zufällige Spezialgebäude-Fragmente",
+    "Finish All Supply Productions": "Alle Vorrats-Produktionen abschließen",
+    "Finish All Supply Production": "Alle Vorrats-Produktion abschließen",
+    "[Unit Type NextEra] Random": "Einheit: Zufällig (nächstes)",
+    "[Unit Type] Random": "Einheit: Zufällig"
+  }
+};
+</script><script>
+// Deutsche Item-Namen (Englisch -> Deutsch): ITM (data/ITM.js), ITX (i18n/items.js) + Regeln für Kits, Einheiten, Boosts.
+// Gemeinsam genutzt von foeff.html und city.html. Liefert itd(englischerName) -> deutscher Name oder null.
+const ITX = I18N.items.ITX;
+function itd(k) {
+  if (ITM[k]) return ITM[k];
+  if (ITX[k]) return ITX[k];
+  let x;
+  if ((x = /^(.*?)(?:(Golden|Silver|Platinum) )?(Selection|Upgrade) Kit$/.exec(k))) {
+    const m = { Golden: "Gold-", Silver: "Silber-", Platinum: "Platin-" };
+    return x[1] + (x[2] ? m[x[2]] : "") + (x[3] === "Selection" ? "Auswahl-Kit" : "Upgrade-Kit");
+  }
+  if ((x = /^\[Unit Type( NextEra)?\] (.+)$/.exec(k)))
+    return (
+      "Einheit: " +
+      ({
+        Fast: "Schnell",
+        Heavy: "Schwer",
+        Light: "Leicht",
+        Artillery: "Artillerie",
+        Ranged: "Fernkämpfer",
+        Random: "Zufällig",
+        Champion: "Held",
+        "Color Guard": "Fahnenwache",
+        "Military Drummer": "Militär-Trommler",
+        Rogue: "Agent",
+      }[x[2]] || x[2]) +
+      (x[1] ? " (nächstes)" : "")
+    );
+  if ((x = /^(\d+)% Coin Boost$/.exec(k))) return x[1] + "% Münz-Bonus";
+  if ((x = /^(\d+(?:h|min)) Mass (Coin|Supply) Rush$/.exec(k)))
+    return x[1] + " Massen-" + (x[2] === "Coin" ? "Münz" : "Vorrats") + "-Eile";
+  if ((x = /^(\d+)% (Attack|Defense) for (Attacking|Defending) Army Boost$/.exec(k)))
+    return (
+      x[1] +
+      "% " +
+      (x[2] === "Attack" ? "Angriff" : "Verteidigung") +
+      " für " +
+      (x[3] === "Attacking" ? "angreifende" : "verteidigende") +
+      " Armee"
+    );
+  if ((x = /^Trading Post - Lv\. (\d+)$/.exec(k))) return "Handelsposten - Stufe " + x[1];
+  return null;
+}
+</script><script>
+// Schlüssel-basierte Übersetzung: createT(texts, getLang) -> t(key, params).
+// texts = { "bereich.name": { en: "…", de: "…" } }, Platzhalter {name} werden aus params ersetzt.
+// Fehlender Schlüssel: der Schlüssel selbst wird angezeigt und in der Konsole gemeldet; fehlende Sprache fällt auf en zurück.
+function createT(texts, getLang) {
+  return function t(key, params) {
+    const e = texts[key];
+    if (!e) {
+      console.warn("i18n: fehlender Schlüssel", key);
+      return key;
+    }
+    const s = e[getLang()] != null ? e[getLang()] : e.en;
+    return params ? s.replace(/\{(\w+)\}/g, (m, k) => (k in params ? params[k] : m)) : s;
+  };
+}
+</script><script>
+const D = DATA.jD,
+  A = DATA.jA,
+  N = DATA.jN,
+  XN = new Set([
+    "a.i. core",
+    "aachener dom",
+    "alcatraz",
+    "arctic orangery",
+    "arktische orangerie",
+    "atlantis museum",
+    "atlantis-museum",
+    "atomium",
+    "basilius-kathedrale",
+    "burg himeji",
+    "cape canaveral",
+    "capitol",
+    "castel del monte",
+    "cathedral of aachen",
+    "château frontenac",
+    "colosseum",
+    "cosmic catalyst",
+    "das habitat",
+    "das virgo-projekt",
+    "deal castle",
+    "der kraken",
+    "die arche",
+    "die blaue galaxie",
+    "dresdner frauenkirche",
+    "fliegende insel",
+    "flying island",
+    "frauenkirche of dresden",
+    "friedensturm",
+    "gaea statue",
+    "gaea-statue",
+    "galata tower",
+    "galataturm",
+    "hagia sophia",
+    "himeji castle",
+    "horizontriss-siphon",
+    "innovation tower",
+    "k.i. kern",
+    "kapitol",
+    "kolosseum",
+    "kosmischer katalysator",
+    "leuchtturm von alexandria",
+    "lighthouse of alexandria",
+    "lotus temple",
+    "lotustempel",
+    "markusdom",
+    "notre dame",
+    "observatorium",
+    "observatory",
+    "oracle of delphi",
+    "orakel von delphi",
+    "rain forest project",
+    "regenwald-projekt",
+    "relikttempel",
+    "royal albert hall",
+    "saatgut-tresor",
+    "saint basil's cathedral",
+    "saturn vi gate centaurus",
+    "saturn vi gate hydra",
+    "saturn vi gate pegasus",
+    "saturn vi tor centaurus",
+    "saturn vi tor hydra",
+    "saturn vi tor pegasus",
+    "seed vault",
+    "shattered horizon siphon",
+    "space carrier",
+    "space needle",
+    "st. mark's basilica",
+    "star gazer",
+    "statue of zeus",
+    "stellar warship",
+    "stellares kriegsschiff",
+    "temple of relics",
+    "terracotta army",
+    "terrakotta-armee",
+    "the arc",
+    "the blue galaxy",
+    "the habitat",
+    "the kraken",
+    "the virgo project",
+    "tower of babel",
+    "truce tower",
+    "turm zu babel",
+    "voyager v1",
+    "weltraumfrachter",
+    "zeusstatue",
+  ]),
+  WK = DATA.jWK,
+  IT = DATA.jIT,
+  MY = DATA.jMY,
+  IW0 = DATA.jIW0,
+  LGL = DATA.jLGL,
+  LGA = DATA.jLGA,
+  LGV = DATA.jLGV,
+  LGI = DATA.jLGI,
+  ER = DATA.jEra,
+  ITE = DATA.jITE;
+</script><script>
+const escRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Übersetzung der Spielnamen (Daten, keine Oberflächentexte). DE: englische Namen -> deutsch (trd); EN: zehn deutsche Wertnamen -> englisch (trl).
+const PR = I18N.foeff.labels.map(([a, b]) => [
+  new RegExp(
+    (/^[\p{L}\p{N}]/u.test(a) ? "(?<![\\p{L}\\p{N}_])" : "") +
+      escRe(a) +
+      (/[\p{L}\p{N}]$/u.test(a) ? "(?![\\p{L}\\p{N}_])" : ""),
+    "gu",
+  ),
+  b,
+]);
+const DEX = I18N.foeff.stats;
+
+let EVRE1, EVRE2;
+function trd(s) {
+  if (typeof EVD !== "undefined") {
+    const k = s.trim();
+    if (EVD[k]) return s.replace(k, EVD[k]);
+  }
+  const sp = /^(\s*Sortieren: )([\s\S]+)$/.exec(s),
+    R = sp ? sp[1] + trd0(sp[2]) : trd0(s);
+  if (LG !== "de") return R;
+  if (!EVRE1) {
+    const alt = Object.keys(EVD).map(escRe).join("|");
+    EVRE1 = new RegExp("\\b(" + alt + ") (\\d{4})\\b", "g");
+    EVRE2 = new RegExp("(?<= · )(" + alt + ")(?= · )", "g");
+  }
+  return R.replace(EVRE1, (m, e, y) => EVD[e] + " " + y)
+    .replace(EVRE2, (e) => EVD[e])
+    .replace(/GBG-Trials/g, "GG-Prüfung")
+    .replace(/\bAllies\b/g, "Verbündete")
+    .replace(/\b(?:GBG|GbG)\b/g, "GG")
+    .replace(/\bGE\b/g, "GEx");
+}
+function trd0(s) {
+  const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(s),
+    k = m[2];
+  if (!k) return s;
+  let r = DEX[k],
+    x;
+  if (!r) {
+    const q = /^(.+?)( – [\d.\/]+)?$/.exec(k),
+      z = itd(q[1]);
+    if (z) r = z + (q[2] || "");
+  }
+  if (!r) {
+    if (
+      (x =
+        /^(Multiplier for )?(GBG-specific |GE-specific |QI-specific )?(Attack & Defense|Attack|Defense)% Boost for (Attacking|Defending) Army$/.exec(
+          k,
+        ))
+    ) {
+      r =
+        (x[2] ? { "GBG-specific ": "GG: ", "GE-specific ": "GEx: ", "QI-specific ": "QI: " }[x[2]] : "") +
+        (x[3] === "Attack" ? "Angriff" : x[3] === "Defense" ? "Verteidigung" : "Angriff & Verteidigung") +
+        "% (" +
+        (x[4] === "Attacking" ? "Angreifer" : "Verteidiger") +
+        ")";
+      if (x[1]) r = "Multiplikator: " + r;
+    }
+  }
+  return r ? m[1] + r + m[3] : s;
+}
+function trl(s) {
+  let r = s;
+  for (const [a, b] of PR) r = r.replace(a, b);
+  return r;
+}
+// Text eines Textknotens/Attributs je Sprache
+const TRC = new Map();
+const trn = (s) => {
+  const k = LG + "\0" + s;
+  let r = TRC.get(k);
+  if (r === undefined) {
+    r = LG === "en" ? trl(s) : trd(s);
+    TRC.size > 20000 && TRC.clear();
+    TRC.set(k, r);
+  }
+  return r;
+};
+// Übersetzt Textknoten sowie placeholder/title im Teilbaum (nur frisch erzeugtes HTML, daher ohne Merken des Originals)
+function trSub(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let n;
+  while ((n = w.nextNode())) {
+    const p = n.parentNode && n.parentNode.nodeName;
+    if (p === "SCRIPT" || p === "STYLE" || p === "TEXTAREA") continue;
+    const t = trn(n.data);
+    n.data !== t && (n.data = t);
+  }
+  root.querySelectorAll("[placeholder],[title]").forEach((el) => {
+    for (const a of ["placeholder", "title"]) {
+      const v = el.getAttribute(a);
+      if (v == null) continue;
+      const t = trn(v);
+      v !== t && el.setAttribute(a, t);
+    }
+  });
+}
+// Ersatz für el.innerHTML = html: setzt das HTML und übersetzt die Spielnamen darin
+function setHtml(el, html) {
+  el.innerHTML = html;
+  trSub(el);
+}
+</script>
+<script>
+// Zustand, Hilfsfunktionen, Tab-Leiste, draw()/drw() (verteilt auf die Tab-Funktionen)
+// Teil 1/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
+const EVD = I18N.foeff.events,
+  evN = (e) => (LG === "de" && EVD[e]) || e;
+const $ = (e) => document.querySelector(e),
+  fmt = (e, t = 2) => Number(e).toLocaleString("de-DE", { maximumFractionDigits: t }),
+  ls = (e, t) => {
+    try {
+      return JSON.parse(localStorage.getItem("foeff:" + e) ?? localStorage.getItem(e)) ?? t;
+    } catch {
+      return t;
+    }
+  },
+  sv = (e, t) => {
+    try {
+      localStorage.setItem("foeff:" + e, JSON.stringify(t));
+    } catch {}
+  };
+LGL.forEach(([e, t]) => {
+  D.labels.includes(e) || (D.labels.push(e), D.w.push(t));
+});
+// Sprache und Übersetzung: tl(Schlüssel, {platzhalter}) liefert den Text der aktuellen Sprache (Texte in i18n/foeff.js).
+let LG = ls("lang", "en");
+const tl = createT(I18N.foeff.texts, () => LG);
+function applyI18n() {
+  document.querySelectorAll("[data-i18n-title]").forEach((e) => e.setAttribute("title", tl(e.dataset.i18nTitle)));
+}
+applyI18n();
+const ERD = [
+  "Bronzezeit",
+  "Eisenzeit",
+  "Frühes Mittelalter",
+  "Hochmittelalter",
+  "Spätes Mittelalter",
+  "Kolonialzeit",
+  "Industriezeitalter",
+  "Jahrhundertwende",
+  "Die Moderne",
+  "Die Postmoderne",
+  "Gegenwart",
+  "Morgen",
+  "Die Zukunft",
+  "Arktische Zukunft",
+  "Ozeanische Zukunft",
+  "Virtuelle Zukunft",
+  "Raumfahrt: Mars",
+  "Raumfahrt: Asteroidengürtel",
+  "Raumfahrt: Venus",
+  "Raumfahrt: Jupitermond",
+  "Raumfahrt: Titan",
+  "Raumfahrt: Weltraumbasis",
+  "Stellares Zeitalter: Entdeckung",
+];
+let EI = ls("era", ER.e.length - 1);
+(EI >= 0 && EI < ER.e.length) || (EI = ER.e.length - 1);
+let W = ls("w", D.w.slice()),
+  IWo = ls("iw", {}),
+  PI = {},
+  tab = ls("tab", "eff"),
+  q = "",
+  at = ls("at", { atk: 200, c: 60, t: 61 });
+for (let e = 0; e < D.w.length; e++) typeof W[e] != "number" && (W[e] = D.w[e]);
+const area = (e) => {
+    const [t, n] = e[4].toLowerCase().split("x").map(Number);
+    return (t * n || 0) + e[5];
+  },
+  pi = (e) =>
+    PI[e] ||
+    (PI[e] = (IT[e] || [])
+      .map((t) => {
+        const n = t.match(/^(.+) – ([\d.]+)(?:\/([\d.]+))?$/);
+        return n ? [stem(n[1]), n[3] ? n[2] / n[3] : +n[2]] : 0;
+      })
+      .filter(Boolean)),
+  ie = (e, k, d) => {
+    const x = ITE[e[0]];
+    if (!x) return 0;
+    let t = 0;
+    for (const [s, a] of pi(e[0])) {
+      const v = x[s];
+      if (!v) continue;
+      t += (v.n[k] / v.m - a) * (d || IWo[s] == null ? IW0[s] || 0 : IWo[s]);
+    }
+    return t;
+  },
+  iL = (id, k) => {
+    const t = IT[id],
+      x = ITE[id];
+    return t && x
+      ? t
+          .map((l) => {
+            const m = l.match(/^(.+) – ([\d.]+)(\/[\d.]+)?$/),
+              v = m && x[stem(m[1])];
+            return v ? (v.n[k] ? m[1] + " – " + +v.n[k].toFixed(2) + (m[3] || "") : null) : l;
+          })
+          .filter(Boolean)
+      : t;
+  },
+  iv = (e, k = EI) => {
+    let t = e[6];
+    for (const n in IWo) if (IT[e[0]]) for (const [s, a] of pi(e[0])) s == n && (t += (IWo[n] - (IW0[n] || 0)) * a);
+    return t + ie(e, k);
+  },
+  EVC = new Map(),
+  evAt = (e, k) => {
+    const x = e.i != null && ER.d[e.i];
+    if (!x) return e[8];
+    const y = e.i * 32 + k;
+    let c = EVC.get(y);
+    if (c) return c;
+    c = { ...e[8] };
+    for (let j = 0; j < x.length; j += 2) {
+      const v = ER.p[x[j + 1]][k];
+      v ? (c[x[j]] = v) : delete c[x[j]];
+    }
+    return (EVC.set(y, c), c);
+  },
+  ev = (e) => evAt(e, EI),
+  totAt = (e, k) => Object.entries(evAt(e, k)).reduce((t, [n, s]) => t + W[n] * s, 0) + iv(e, k),
+  tot = (e) => totAt(e, EI),
+  eff = (e) => {
+    const t = area(e);
+    return t ? tot(e) / t : 0;
+  },
+  T = {
+    eff: "f.tab.eff",
+    kits: "f.tab.kits",
+    city: "f.tab.city",
+    inv: "f.tab.inv",
+    al: "f.tab.al",
+    tr: "f.tab.tr",
+    w: "f.tab.w",
+    a: "f.tab.a",
+  },
+  navUI = () => {
+    setHtml(
+      $("#nav"),
+      Object.entries(T)
+        .map(([e, t]) => `<button data-k="${e}">${tl(t)}</button>`)
+        .join(""),
+    );
+  };
+(navUI(),
+  ($("#nav").onclick = (e) => {
+    e.target.dataset.k && ((tab = e.target.dataset.k), sv("tab", tab), draw());
+  }));
+function draw() {
+  try {
+    drw();
+  } catch (e) {
+    setHtml($("#v"), '<div class="card neg">' + tl("f.error") + e.message + "</div>");
+  }
+}
+function drw() {
+  (T[tab] || (tab = "eff"),
+    document.querySelectorAll("nav button").forEach((e) => e.classList.toggle("on", e.dataset.k == tab)),
+    setHtml($("#v"), ""),
+    ($("#v").oninput = null),
+    {
+      eff: vEff,
+      city: () => vImp("city", tl("f.tab.city"), tl("f.ph.cityPaste")),
+      inv: () => vImp("inv", tl("f.tab.inv"), tl("f.ph.invPaste")),
+      al: vAl,
+      tr: vTr,
+      kits: vKits,
+      w: vW,
+      a: vA,
+    }[tab](),
+    scrollTo(0, 0));
+}
+let qT = 0;
+function vEff() {
+  (setHtml(
+    $("#v"),
+    `<input id="q" type="search" placeholder="${tl("f.ph.search")}" value="${q}">${evUI()[0]}${skUI("eff")}${evUI()[1]}<div id="l"></div>`,
+  ),
+    ($("#q").oninput = (e) => {
+      q = e.target.value;
+      clearTimeout(qT);
+      qT = setTimeout(list, 120);
+    }),
+    skBind("eff", list),
+    evBind(list),
+    list());
+}
+</script><script>
+// Tab „Gebäude“ (vEff): Event-, Jahres- und Skill-Filter, Liste
+// Teil 2/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
+const evK = (e) => (e[3] || "").replace(/\s*\d{4}$/, ""),
+  yrK = (e) => ((e[3] || "").match(/\d{4}$/) || [""])[0],
+  isHid = (b) => /^W_MultiAge_ONBOARD/.test(b[0]),
+  evList = () =>
+    [
+      ...new Set(
+        D.b
+          .filter((b) => !isHid(b))
+          .map(evK)
+          .filter(Boolean),
+      ),
+    ].sort((e, t) => evN(e).localeCompare(evN(t), "de")),
+  yrList = (e) =>
+    [
+      ...new Set(
+        D.b
+          .filter((t) => !isHid(t) && (!e || evK(t) == e))
+          .map(yrK)
+          .filter(Boolean),
+      ),
+    ].sort((e, t) => t - e),
+  fopt = (e, t, n) =>
+    `<option value="">${e}</option>` +
+    t.map((s) => `<option value="${esc(s)}"${s == n ? " selected" : ""}>${esc(s)}</option>`).join(""),
+  evUI = () => {
+    const e = ls("fev", "");
+    return [
+      `<div class="row" style="gap:6px;margin:6px 0"><select id="fev" style="flex:2">${fopt(tl("f.allEvents"), evList(), e)}</select><select id="fyr" style="flex:1">${fopt(tl("f.allYears"), yrList(e), ls("fyr", ""))}</select></div>`,
+      `<label class="m" style="display:flex;align-items:center;gap:8px;margin:4px 0"><input type="checkbox" id="fnl" style="width:20px;height:20px;flex:none;margin:0"${ls("fnl", 0) ? " checked" : ""}> ${tl("f.noTimed")}</label>`,
+    ];
+  },
+  evBind = (e) => {
+    (($("#fnl").onchange = (t) => {
+      (sv("fnl", t.target.checked ? 1 : 0), e());
+    }),
+      ($("#fev").onchange = (t) => {
+        const n = t.target.value;
+        (sv("fev", n),
+          yrList(n).includes(ls("fyr", "")) || sv("fyr", ""),
+          setHtml($("#fyr"), fopt(tl("f.allYears"), yrList(n), ls("fyr", ""))),
+          e());
+      }),
+      ($("#fyr").onchange = (t) => {
+        (sv("fyr", t.target.value), e());
+      }));
+  };
+let SKs = null;
+const skList = () =>
+    SKs ||
+    (SKs = (() => {
+      const e = new Set();
+      return (
+        D.b.forEach((t, i) => {
+          for (const n in t[8]) t[8][n] && e.add(+n);
+          const x = ER.d[i];
+          if (x) for (let j = 0; j < x.length; j += 2) e.add(x[j]);
+        }),
+        [...e].sort((t, n) => t - n)
+      );
+    })()),
+  SKL = (e) =>
+    ({
+      e: tl("f.s.eff"),
+      t: tl("f.s.total"),
+      n: tl("f.s.name"),
+      a: tl("f.s.area"),
+      i: tl("f.s.itemVal"),
+      s: tl("f.s.sel"),
+    })[e] || D.labels[e.slice(1)],
+  skv = (e, t, n = 1) =>
+    t == "e"
+      ? eff(e)
+      : t == "t"
+        ? n * tot(e)
+        : t == "n"
+          ? nm(e).toLowerCase()
+          : t == "a"
+            ? area(e)
+            : t == "i"
+              ? n * iv(e)
+              : t == "s"
+                ? area(e)
+                  ? ssel().reduce((a, k) => a + (ev(e)[k] || 0), 0) / area(e)
+                  : 0
+                : t == "s"
+                  ? area(e)
+                    ? ssel().reduce((a, k) => a + (ev(e)[k] || 0), 0) / area(e)
+                    : 0
+                  : n * (ev(e)[t.slice(1)] || 0),
+  skc = (e, t) => (n, s) => {
+    const a = n[1],
+      i = s[1],
+      o = e == "n" ? !t : !!t;
+    const c = typeof a == "string" ? (o ? a.localeCompare(i) : i.localeCompare(a)) : o ? a - i : i - a;
+    if (c || e != "e") return c;
+    // Gleiche Effizienz (v. a. 0): absteigend nach Gesamtwert, dann nach Name
+    const bt = (r) => (typeof r[0] == "string" ? r : r[0]);
+    return tot(bt(s[0])) - tot(bt(n[0])) || nm(bt(n[0])).localeCompare(nm(bt(s[0])), "de");
+  },
+  skx = (e, t) => (e == "e" || e == "n" ? "" : ` · ${SKL(e)}: ${fmt(t)}`),
+  skUI = (e) =>
+    `<div class="row" style="gap:6px;margin:6px 0"><select id="sk${e}" style="flex:1">${["e", "t", "n", "a", "i", ...(e == "eff" && ssel().length ? ["s"] : []), ...skList().map((t) => "r" + t)].map((t) => `<option value="${t}"${t == ls("sk:" + e, "e") ? " selected" : ""}>${tl("f.sort")} ${SKL(t)}</option>`).join("")}</select><button class="s" id="sd${e}" title="${tl("f.reverse")}">${ls("sd:" + e, 0) ? "↑" : "↓"}</button>${e == "eff" ? `<button class="s" id="stb">${tl("f.s.stats")}${ssel().length ? " (" + ssel().length + ")" : ""}</button>` : ""}</div>${e == "eff" && ssel().length ? `<div id="stc" style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${schips()}</div>` : ""}`,
+  skBind = (e, t) => {
+    if (e == "eff") {
+      $("#stb").onclick = statSheet;
+      $("#stc") &&
+        ($("#stc").onclick = (n) => {
+          const k = +n.target.dataset.k;
+          if (isNaN(k)) return;
+          sv(
+            "ssel",
+            ssel().filter((x) => x != k),
+          );
+          (ssel().length || ls("sk:eff", "e") != "s" || sv("sk:eff", "e"), vEff());
+        });
+    }
+    (($("#sk" + e).onchange = (n) => {
+      (sv("sk:" + e, n.target.value), t());
+    }),
+      ($("#sd" + e).onclick = (n) => {
+        const s = ls("sd:" + e, 0) ? 0 : 1;
+        (sv("sd:" + e, s), (n.target.textContent = s ? "↑" : "↓"), t());
+      }));
+  };
+const ssel = () => ls("ssel", []),
+  SGR = [
+    ["f.s.g0", (i) => i <= 12],
+    ["f.s.g1", (i) => i >= 13 && i <= 21],
+    ["f.s.g2", (i) => i == 22 || i == 23],
+    ["f.s.g3", (i) => i >= 24 && i <= 47],
+    ["f.s.g4", (i) => i >= 48 && i <= 55],
+  ],
+  schips = () =>
+    ssel()
+      .map(
+        (k) =>
+          `<span class="s" data-k="${k}" style="padding:4px 10px;border-radius:12px;cursor:pointer">${esc(D.labels[k] || k)} ✕</span>`,
+      )
+      .join("");
+function statSheet() {
+  const a = document.createElement("div");
+  a.style.cssText =
+    "position:fixed;inset:0;background:#0009;z-index:20;display:flex;align-items:flex-end;justify-content:center";
+  const ids = skList().filter((i) => D.labels[i] != null);
+  const draw = () => {
+    const f = $("#ssq").value.toLowerCase(),
+      sel = new Set(ssel());
+    setHtml(
+      $("#ssl"),
+      SGR.map(([g, fn]) => {
+        const r = ids.filter(
+          (i) => fn(i) && (!f || D.labels[i].toLowerCase().includes(f) || trn(D.labels[i]).toLowerCase().includes(f)),
+        );
+        return r.length
+          ? `<h2>${tl(g)}</h2>` +
+              r
+                .map(
+                  (i) =>
+                    `<label class="row" style="cursor:pointer"><span>${esc(D.labels[i])}</span><input type="checkbox" style="width:auto" data-k="${i}"${sel.has(i) ? " checked" : ""}></label>`,
+                )
+                .join("")
+          : "";
+      }).join(""),
+    );
+    setHtml($("#ssc"), schips());
+  };
+  setHtml(
+    a,
+    `<div class="card" style="width:100%;max-width:600px;max-height:85vh;overflow:auto;margin:0;border-radius:14px 14px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom))"><div class="row"><b>${tl("f.s.stats")}</b><span><button class="s" id="ssx">${tl("f.s.clear")}</button> <button class="s" id="ssd">${tl("f.s.done")}</button></span></div><div id="ssc" style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0"></div><input id="ssq" type="search" placeholder="${tl("f.ph.search")}"><div id="ssl"></div></div>`,
+  );
+  document.body.appendChild(a);
+  const done = () => {
+    ssel().length ? sv("sk:eff", "s") : ls("sk:eff", "e") == "s" && sv("sk:eff", "e");
+    a.remove();
+    vEff();
+  };
+  a.onclick = (e) => {
+    e.target === a && done();
+  };
+  $("#ssd").onclick = done;
+  $("#ssx").onclick = () => (sv("ssel", []), draw());
+  $("#ssq").oninput = draw;
+  a.onchange = (e) => {
+    const k = +e.target.dataset.k;
+    if (isNaN(k)) return;
+    sv("ssel", e.target.checked ? [...new Set([...ssel(), k])] : ssel().filter((x) => x != k));
+    setHtml($("#ssc"), schips());
+  };
+  $("#ssc").onclick = (e) => {
+    const k = +e.target.dataset.k;
+    if (isNaN(k)) return;
+    sv(
+      "ssel",
+      ssel().filter((x) => x != k),
+    );
+    draw();
+  };
+  draw();
+}
+function list() {
+  if (!$("#l")) return;
+  const e = q.toLowerCase(),
+    t = ls("sk:eff", "e");
+  const fe = ls("fev", ""),
+    fy = ls("fyr", ""),
+    nl = ls("fnl", 0),
+    sd = ls("sd:eff", 0);
+  let n = D.b
+    .filter(
+      (a) =>
+        !isHid(a) &&
+        (!fe || evK(a) == fe) &&
+        (!fy || yrK(a) == fy) &&
+        (!nl || !/\bL:/.test(a[2])) &&
+        (!e || hay(a).includes(e)),
+    )
+    .map((a) => [a, skv(a, t)])
+    .sort(skc(t, sd));
+  const s = n.length;
+  setHtml(
+    $("#l"),
+    n
+      .slice(0, 150)
+      .map(
+        ([a, i], o) =>
+          `<div class="card" onclick="det(${a.i})"><div class="row"><b>${o + 1}. ${nm(a)}</b><span class="e">${fmt(eff(a))}</span></div><div class="m">${a[4]}${a[5] ? " + " + a[5] + " " + tl("f.street") : ""} · ${a[3] || "–"} · ${a[2] || "–"}${skx(t, i)} · ${wl(a)}</div></div>`,
+      )
+      .join("") + (s > 150 ? `<div class="m">${tl("f.more", { n: s - 150 })}</div>` : "") ||
+      `<div class="m">${tl("f.nothing")}</div>`,
+  );
+}
+</script><script>
+// Tabs „Gewichtung“ (vW) und „Attrition“ (vA)
+// Teil 3/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
+let INm = null;
+const inames = () =>
+    INm ||
+    (INm = (() => {
+      const e = {};
+      for (const t of Object.values(IT))
+        for (const n of t) {
+          const s = n.match(/^(.+) – /);
+          if (!s) continue;
+          const a = stem(s[1]);
+          (!e[a] || s[1].length < e[a].length) && (e[a] = s[1]);
+        }
+      return e;
+    })()),
+  iw = (e) => (e in IWo ? IWo[e] : IW0[e] || 0);
+function vW() {
+  setHtml(
+    $("#v"),
+    `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="s" id="ws">${tl("f.w.save")}</button><button class="s" id="wl">${tl("f.w.discard")}</button></div><div class="g" style="margin-top:10px">` +
+      D.labels
+        .map((t, n) => `<span>${t}</span><input type="number" step="any" data-i="${n}" value="${W[n]}">`)
+        .join("") +
+      `</div><h2>Items</h2><input id="iq" type="search" placeholder="${tl("f.ph.itemSearch")}"><div class="g" id="il" style="margin-top:8px"></div>`,
+  );
+  const e = () => {
+    const t = $("#iq").value.toLowerCase(),
+      n = inames();
+    const isU = (k) => /^\[?unit type/i.test(n[k] || ""),
+      ut = (k) => (isU(k) ? (/nextera/i.test(n[k]) ? 2 : 1) : 0),
+      UM = Math.max(
+        0,
+        ...Object.keys(n)
+          .filter(isU)
+          .map((k) => Math.abs(iw(k))),
+      ),
+      uw = (k) => (isU(k) ? UM : Math.abs(iw(k)));
+    setHtml(
+      $("#il"),
+      Object.keys(n)
+        .filter((s) => (t ? n[s].toLowerCase().includes(t) || trn(n[s]).toLowerCase().includes(t) : iw(s) || IW0[s]))
+        .sort((s, a) => uw(a) - uw(s) || ut(s) - ut(a) || Math.abs(iw(a)) - Math.abs(iw(s)) || n[s].localeCompare(n[a]))
+        .slice(0, 80)
+        .map((s) => `<span>${esc(n[s])}</span><input type="number" step="any" data-k="${esc(s)}" value="${iw(s)}">`)
+        .join("") || `<div class="m">${tl("f.nothing")}</div>`,
+    );
+  };
+  (($("#iq").oninput = e),
+    e(),
+    ($("#v").oninput = (t) => {
+      const n = t.target,
+        s = n.dataset.i,
+        a = n.dataset.k;
+      if (s != null) W[s] = parseFloat(n.value) || 0;
+      else if (a != null) {
+        const i = parseFloat(n.value) || 0;
+        i === (IW0[a] || 0) ? delete IWo[a] : (IWo[a] = i);
+      }
+    }),
+    ($("#ws").onclick = () => {
+      confirm(tl("f.w.saveConfirm")) && (sv("w", W), sv("iw", IWo));
+    }),
+    ($("#wl").onclick = () => {
+      ((W = ls("w", D.w.slice())), (IWo = ls("iw", {})), draw());
+    }));
+}
+function vA() {
+  setHtml(
+    $("#v"),
+    `<div class="g"><span>${tl("f.gbgAtk")}</span><input id="ak" type="number" value="${at.atk}"><span>${tl("f.attComfort")}</span><input id="c" type="number" value="${at.c}"><span>${tl("f.attTarget")}</span><input id="t" type="number" value="${at.t}"></div><div id="o"></div>`,
+  );
+  const e = () => {
+    ((at = { atk: +$("#ak").value || 0, c: +$("#c").value || 0, t: +$("#t").value || 0 }), sv("at", at));
+    const t = D.att.map((o) => o[1]);
+    let n = 0;
+    for (let o = at.c; o < at.t && o < t.length - 1; o++) n += ((t[o + 1] - t[o]) * (100 + at.atk)) / (100 + t[o]);
+    const s = Math.min(at.t, t.length - 1),
+      a = t[Math.min(at.c, t.length - 1)],
+      i = t[s];
+    setHtml(
+      $("#o"),
+      `<div class="card"><div class="row"><span>${tl("f.atkNeeded")}</span><b class="e">${at.t > at.c ? fmt(Math.ceil(n), 0) + " %" : "–"}</b></div><div class="m">${tl("f.defEnemy")} ${fmt(a, 0)} % → ${fmt(i, 0)} %</div></div>`,
+    );
+  };
+  (($("#v").oninput = e), e());
+}
+</script><script>
+// Gemeinsame Helfer: Sprache (LG), Namen, Wiki-Links, Item-Summen, Zeitalter-/Sprachauswahl
+// Teil 4/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
+D.b.forEach((e, t) => (e.i = t));
+let kcDe = null;
+const nm = (e) => (N[e[0]] || [])[LG === "de" ? 1 : 0] || e[1],
+  fold = (e) =>
+    e
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .toLowerCase()
+      .replace(/ß/g, "ss")
+      .replace(/([aou])e/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim(),
+  NM = {},
+  NF = {};
+D.b.forEach((e) => {
+  [e[1], ...(N[e[0]] || [])].filter(Boolean).forEach((t) => {
+    const n = t.normalize("NFC").toLowerCase();
+    NM[n] || (NM[n] = e);
+    const s = fold(t);
+    NF[s] || (NF[s] = e);
+  });
+});
+const WB = "https://de.wiki.forgeofempires.com/index.php?";
+function wiki0(e) {
+  const t = [...(N[e[0]] || []).slice(1), e[1]].filter(Boolean);
+  for (const s of t) {
+    const a = WK[s.toLowerCase()];
+    if (a) return WB + "title=" + encodeURIComponent(a);
+  }
+  const n = (N[e[0]] || [])[1];
+  if (n && !/^(Ascended\s+)?[A-Za-z]{2,4}\d{2}[A-Za-z0-9]*$/.test(n)) {
+    const s = n.match(/^(.*\S)\s+(\d+)$/);
+    return WB + "title=" + encodeURIComponent((s ? s[1] + " - St. " + s[2] : n).replace(/ /g, "_"));
+  }
+  return WB + "search=" + encodeURIComponent((t[0] || e[1]).replace(/\s+\d+$/, ""));
+}
+const AKT = new Set([
+  "W_MultiAge_GBG2023A",
+  "W_MultiAge_TEMP24WW",
+  "W_MultiAge_PassBonus22a",
+  "W_MultiAge_PassBonus22b",
+  "W_MultiAge_HalloweenBonus22a",
+  "W_MultiAge_HalloweenBonus22b",
+  "W_MultiAge_Expedition22",
+  "W_MultiAge_TEMP24GR",
+  "W_MultiAge_GEX24A2TEMP",
+  "W_MultiAge_HERO24B2TEMP",
+  "W_MultiAge_HERO24D2TEMP",
+  "W_MultiAge_HERO24C2TEMP",
+]);
+function wiki(e) {
+  const t = wiki0(e);
+  return AKT.has(e[0]) && t.includes("title=") ? t + encodeURIComponent("_-_Aktiv") : t;
+}
+const WE = "https://en.wiki.forgeofempires.com/index.php?",
+  wikiE = (e) => {
+    const w = e.i != null ? ER.w[e.i] : void 0;
+    return w === 0 || e.i == null
+      ? WE + "search=" + encodeURIComponent(e[1])
+      : WE + "title=" + encodeURIComponent(String(w || e[1]).replace(/ /g, "_"));
+  },
+  wla = (u, t) =>
+    `<a href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--a);text-decoration:none">${t} ↗</a>`,
+  wl = (e) => (LG === "en" ? wla(wikiE(e), "Wiki EN") : wla(wiki(e), "Wiki DE")),
+  esc = (e) => String(e).replace(/[&<>"]/g, (t) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[t]),
+  // n/d als ganze Items + Rest: 393/30 -> 13+3/30 (unter einem ganzen Item unverändert)
+  fq = (n, d) => {
+    const w = Math.floor(n / d + 1e-9);
+    if (!(d > 0) || w < 1) return `${fmt(n, 2)}/${d}`;
+    const r = Math.round((n - w * d) * 100) / 100;
+    return r ? `${fmt(w, 0)}+${fmt(r, 2)}/${d}` : fmt(w, 0);
+  },
+  // Kit-Inhalt (data/KC.js): Auswahl-Gebäude unter der Kit-Zeile, in der gewählten Sprache
+  kcRow = (k, e) => {
+    let c = window.KC && window.KC[k];
+    // Objekt statt Liste: Inhalt hängt vom produzierenden Gebäude ab (Schlüssel = englischer Name ohne Stufenzahl)
+    if (c && !Array.isArray(c)) c = c[e && N[e[0]] ? N[e[0]][0].replace(/ \d+$/, "") : ""];
+    if (!c) return "";
+    if (!kcDe) {
+      kcDe = {};
+      for (const id in N) kcDe[N[id][0]] = N[id][1];
+    }
+    const out = [];
+    for (const b of c) {
+      const x = LG === "de" ? kcDe[b] || b : b,
+        m = /^(.*) (\d+)$/.exec(x),
+        q = out[out.length - 1];
+      if (m && q && q.b === m[1] && q.to + 1 === +m[2]) q.to = +m[2];
+      else out.push(m ? { b: m[1], from: +m[2], to: +m[2] } : { t: x });
+    }
+    const txt = out.map((o) => o.t || (o.from === o.to ? `${o.b} ${o.from}` : `${o.b} ${o.from}–${o.to}`));
+    return `<div class="row"><span class="m" style="padding-left:12px">↳ ${esc(txt.join(" / "))}</span></div>`;
+  },
+  // Kit-Farbe nach Stufe: normal weiß, Silver silber, Golden/Gold gold (CSS .kw/.ks/.kg)
+  kitCls = (n) =>
+    / Kit$/.test(n)
+      ? / (?:Golden|Gold) (?:Selection|Upgrade) Kit$/.test(n)
+        ? " kg"
+        : / Silver (?:Selection|Upgrade) Kit$/.test(n)
+          ? " ks"
+          : / Platinum (?:Selection|Upgrade) Kit$/.test(n)
+            ? ""
+            : " kw"
+      : "",
+  itRows = (t, e) =>
+    t
+      .map((n) => {
+        const s = n.lastIndexOf(" – "),
+          kn = kitName(s > 0 ? n.slice(0, s) : n, e && N[e[0]] ? N[e[0]][0] : "");
+        return s > 0
+          ? `<div class="row"><span class="m${kitCls(kn)}">${esc(kn)}</span><span>${esc(n.slice(s + 3).replace(/^(\d+(?:\.\d+)?)\/(\d+)$/, (m, a, b) => (+a >= +b ? fq(+a, +b) : m)))}</span></div>${kcRow(n.slice(0, s), e)}`
+          : `<div class="row"><span class="m${kitCls(kn)}">${esc(kn)}</span></div>${kcRow(n, e)}`;
+      })
+      .join(""),
+  itl = (e) => {
+    const t = IT[e[0]];
+    return t && t.length ? `<div class="it">${itRows(t, e)}</div>` : "";
+  },
+  items = (e) => {
+    const t = iL(e[0], EI);
+    return !t || !t.length ? "" : `<h2>${tl("f.prodItems")}</h2>${itRows(t, e)}`;
+  },
+  PAIR = (e) => (e >= 24 && e < 40 ? ((e - 24) % 2 ? e - 1 : e + 1) : -1),
+  wsum = (e) => e.reduce((t, n) => t + W[n], 0),
+  cl = (e) => (e.length > 1 ? D.labels[e[0]].replace("Attack%", "Attack & Defense%") : D.labels[e[0]]);
+function cmb(e) {
+  const t = new Map(e.map((a) => [+a[0], a[1]])),
+    n = new Set(),
+    s = [];
+  for (const [a, i] of e) {
+    const o = +a;
+    if (n.has(o)) continue;
+    n.add(o);
+    const l = PAIR(o);
+    l >= 0 && !n.has(l) && t.has(l) && Math.abs(t.get(l) - i) < 1e-9
+      ? (n.add(l), s.push({ ks: [Math.min(o, l), Math.max(o, l)], v: i }))
+      : s.push({ ks: [o], v: i });
+  }
+  return s;
+}
+const cw = (e) =>
+  cmb(e)
+    .map((t) => ({ ...t, w: wsum(t.ks) }))
+    .sort((t, n) => Math.abs(n.v * n.w) - Math.abs(t.v * t.w));
+function det(e) {
+  const t = D.b[e],
+    n = N[t[0]] || [t[1], t[1]],
+    s = cw(Object.entries(ev(t)))
+      .map(
+        (i) =>
+          `<div class="row"><span class="m">${cl(i.ks)}</span><span>${fmt(i.v)} <span class="m">× ${fmt(i.w)} = ${fmt(i.v * i.w)}</span></span></div>`,
+      )
+      .join(""),
+    a = document.createElement("div");
+  ((a.style.cssText =
+    "position:fixed;inset:0;background:#0009;z-index:20;display:flex;align-items:flex-end;justify-content:center"),
+    (a.onclick = (i) => {
+      i.target === a && a.remove();
+    }),
+    setHtml(
+      a,
+      `<div class="card" style="width:100%;max-width:600px;max-height:85vh;overflow:auto;margin:0;border-radius:14px 14px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom))"><div class="row"><b>${nm(t)}</b><button class="s" onclick="this.closest('[style*=fixed]').remove()">✕</button></div><div class="m">EN: ${n[0] || t[1]} · DE: ${n[1] || "–"}<br>ID: ${t[0]} · ${wl(t)}<br>${tl("f.detSize", { a: t[4], b: t[5], c: area(t) })} ${t[3] || "–"} · ${t[2] || "–"}</div><div class="row" style="margin:8px 0"><span>${tl("f.wEff")}</span><b class="e">${fmt(eff(t))}</b></div><div class="row"><span class="m">${tl("f.wSum")}</span><b>${fmt(tot(t))}</b></div>${t[6] ? `<div class="row"><span class="m">${tl("f.ofWhichItems")}</span><span>${fmt(t[6] + ie(t, EI, 1))}</span></div>` : ""}${items(t)}<h2>${tl("f.prodValues")} ${esc(eraN(EI))}</h2>${s || `<div class="m">${tl("f.noValues")}</div>`}${ER.d[t.i] && area(t) ? `<h2>${tl("f.effByEra")}</h2><div class="it">${ER.e.map((x, k) => `<div class="row"><span class="m">${esc(eraN(k))}${k == EI ? " ◀" : ""}</span><span>${fmt(totAt(t, k) / area(t))}</span></div>`).join("")}</div>` : ""}</div>`,
+    ),
+    document.body.appendChild(a));
+}
+const eraN = (k) => (LG === "de" ? ERD[k] : ER.e[k]),
+  eraOpts = () => {
+    (setHtml($("#era"), ER.e.map((x, k) => `<option value="${k}">${esc(eraN(k))}</option>`).join("")),
+      ($("#era").value = EI));
+  };
+(eraOpts(),
+  ($("#era").onchange = (e) => {
+    ((EI = +e.target.value), sv("era", EI), draw());
+  }));
+(($("#lg").value = LG),
+  ($("#lg").onchange = (e) => {
+    ((LG = e.target.value), sv("lang", LG), applyI18n(), navUI(), eraOpts(), draw());
+  }));
+
+// Suchtext eines Gebäudes (klein geschrieben): Name, Felder, Event, Items – englisch UND in der aktuellen Sprache übersetzt (Cache je Sprache)
+const HAY = {};
+function hay(a) {
+  const k = LG + a[0];
+  if (HAY[k] != null) return HAY[k];
+  const t = [nm(a), a[1], a[2], a[3], ...(IT[a[0]] || [])];
+  return (HAY[k] = [...t, ...t.map((v) => trn(String(v)))].join(" ").toLowerCase());
+}
+</script><script>
+// Tabs „Stadt“ und „Inventar“ (vImp), Import-Bericht (rIm), LG-Abschnitt, Item-Summe
+// Teil 5/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
+function vImp(e, t, n) {
+  const s = ls("imp_" + e, "");
+  (setHtml(
+    $("#v"),
+    `<textarea id="t" rows="6" placeholder="${n}" style="width:100%;background:var(--c);color:var(--t);border:1px solid var(--b);border-radius:8px;padding:8px;font:inherit">${s}</textarea><div class="row" style="margin:8px 0;gap:8px"><button class="s" id="go">${tl("f.calc")}</button><label class="s" style="border-radius:8px;padding:8px 12px;font-weight:600;background:var(--c);color:var(--t);border:1px solid var(--b)">${tl("f.csvPick")}<input type="file" id="f" accept=".csv,.tsv,.txt,.json,text/csv,text/plain,application/json" style="display:none"></label></div><div id="o"></div>`,
+  ),
+    ($("#go").onclick = () => {
+      (sv("imp_" + e, $("#t").value), rIm(e, true));
+    }),
+    ($("#f").onchange = async (a) => {
+      const i = a.target.files[0];
+      if (!i) return;
+      const o = await i.arrayBuffer();
+      let l;
+      try {
+        l = new TextDecoder("utf-8", { fatal: !0 }).decode(o);
+      } catch {
+        l = new TextDecoder("windows-1252").decode(o);
+      }
+      const c = fixEnc(l);
+      (($("#t").value = c), sv("imp_" + e, c), rIm(e, true));
+    }),
+    s && rIm(e));
+}
+let LX = ls("lgx", {});
+const lxk = (e) => nrm(e).toLowerCase(),
+  xw = (e) => (e.k != null ? W[e.k] : e.w),
+  xv = (e, t) => t * e.v * xw(e),
+  xt = (e, t) => (LX[lxk(e)] || []).reduce((n, s) => n + xv(s, t), 0),
+  xr = (e, t) => {
+    const n = lxk(e);
+    return (LX[n] || [])
+      .map(
+        (s, a) =>
+          `<div class="row"><span class="m">${esc(s.k != null ? D.labels[s.k] : s.n)} ${tl("f.own")}</span><span>${fmt(t * s.v)} <span class="m">× ${fmt(xw(s))} = ${fmt(xv(s, t))}</span> <button class="s" data-xd="${esc(n)}" data-i="${a}" style="padding:0 8px">✕</button></span></div>`,
+      )
+      .join("");
+  };
+function lgSec(e, t, n) {
+  e.sort((a, i) => tot(i[0]) * i[1] - tot(a[0]) * a[1]);
+  const s = (a, i) =>
+    cw(Object.entries(a[8]))
+      .map(
+        (o) =>
+          `<div class="row"><span class="m">${cl(o.ks)}</span><span>${fmt(i * o.v)} <span class="m">× ${fmt(o.w)} = ${fmt(i * o.v * o.w)}</span></span></div>`,
+      )
+      .join("");
+  return (
+    `<h2>${tl("f.lgTitle", { n: fmt(n, 0) })}</h2>` +
+    e
+      .map(
+        ([a, i, o, l, c, d]) =>
+          `<div class="card"><div class="row"><b>${i}× ${esc(a[1])}${o ? " · " + tl("f.lvlN", { n: fmt(o, 0) }) : ""}</b><span class="e">${fmt(i * tot(a) + xt(l, i))}</span></div><div class="it">${s(a, i)}${xr(l, i)}</div>${d ? `<div class="m" style="font-size:12px;margin-top:6px">${esc(d)}</div>` : ""}${unh(c)}</div>`,
+      )
+      .join("") +
+    t
+      .map(
+        ([a, i, o, l, c]) =>
+          `<div class="card"><div class="row"><b>${i}× ${esc(a)}${o ? " · " + tl("f.lvlN", { n: fmt(o, 0) }) : ""}</b><span class="e">${xt(a, i) ? fmt(xt(a, i)) : `<span class="m">${tl("f.lvlMissing")}</span>`}</span></div><div class="it">${xr(a, i)}</div>${c ? `<div class="m" style="font-size:12px;margin-top:6px">${esc(c)}</div>` : ""}${unh(l)}</div>`,
+      )
+      .join("")
+  );
+}
+const stem = (e) =>
+  e
+    .toLowerCase()
+    .replace(/[’‘`']/g, "")
+    .replace(/[^\p{L}\p{N}%\s\[\]-]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((t) => (t.length > 3 && t.endsWith("s") && !t.endsWith("ss") ? t.slice(0, -1) : t))
+    .join(" ");
+function itSum(e) {
+  const t = Object.values(e).sort((s, a) => s.n.localeCompare(a.n));
+  if (!t.length) return "";
+  const n = (s, a, i, o) =>
+    `<div class="row pick" data-q="${esc(s)}"><span class="m">${esc(a)}${o ? `<br><span style="font-size:12px">${o}</span>` : ""}</span><b>${i}</b></div>`;
+  return (
+    `<h2>${tl("f.itemsTotal")}</h2><div class="card">` +
+    t
+      .map((s) => {
+        const a = Object.keys(s.F).sort((i, o) => i - o);
+        if (!a.length) return n(s.n, s.n, fmt(s.W, 2));
+        if (a.length == 1) {
+          const i = a[0],
+            o = s.F[i];
+          return n(s.n, s.n, fq(o + s.W * i, +i), s.W ? `${fq(o, +i)} + ${tl("f.plusWhole", { n: fmt(s.W, 2) })}` : "");
+        }
+        return (
+          a.map((i) => n(s.n, s.n, fq(s.F[i], +i))).join("") +
+          (s.W ? n(s.n, s.n + " " + tl("f.whole"), fmt(s.W, 2)) : "")
+        );
+      })
+      .join("") +
+    "</div>"
+  );
+}
+function rIm(e, save) {
+  LGR = null;
+  const t = [],
+    n = [],
+    s = new Map();
+  let a = 0,
+    i = 0,
+    o = 0;
+  const l = {},
+    c = {};
+  let d = 0;
+  const f = [],
+    m = [],
+    j = [],
+    M = new Map();
+  (ent(ls("imp_" + e, "")).forEach(([r, p, v]) => {
+    let g = fnd(r);
+    if (!g && XNS.has(nrm(r).toLowerCase())) {
+      d += p;
+      for (const b of LX[lxk(r)] || []) b.k != null && (l[b.k] = (l[b.k] || 0) + p * b.v);
+      let h = v ? fromCsv(r, v, 1) : null;
+      const k = v ? unm(v) : [];
+      let x = (v && (v.level || v.lvl || v.stufe || v.stage)) || 0,
+        C = 0,
+        I = 0;
+      if (!x) {
+        const b = lgl(r);
+        b && ((x = b), (I = 1));
+      }
+      if (!x && h) {
+        const b = lgi(r, h[8]);
+        b && ((x = b), (C = 1));
+      }
+      const B = lgv(r, x),
+        H = [
+          B && B.note,
+          I ? tl("f.lvlFromLg", { n: x }) : "",
+          C ? tl("f.lvlFromImport", { n: x }) : "",
+          x ? "" : tl("f.lvlNone"),
+        ]
+          .filter(Boolean)
+          .join(" ");
+      if (B) {
+        h || (h = ["csv:" + r, nrm(r), "", "CSV", "0x0", 0, 0, 0, {}]);
+        for (const [b, L] of Object.entries(B.v)) h[8][b] = (h[8][b] || 0) + L;
+      }
+      if (h) {
+        for (const [b, L] of Object.entries(h[8])) l[b] = (l[b] || 0) + p * L;
+        {
+          const b = h[0] + JSON.stringify(h[8]) + x,
+            L = M.get(b);
+          if (L) L[1] += p;
+          else {
+            const F = [h, p, x, r, k, H];
+            (M.set(b, F), m.push(F));
+          }
+        }
+      } else {
+        const b = r + "|" + x,
+          L = M.get(b);
+        if (L) L[1] += p;
+        else {
+          const F = [r, p, x, k, H];
+          (M.set(b, F), j.push(F));
+        }
+      }
+      return;
+    }
+    if ((!g && v && (g = fromCsv(r, v)), !g)) {
+      n.push(r + " ×" + p);
+      return;
+    }
+    if (g[0].startsWith("csv:") && !area(g)) {
+      const b = fam(r);
+      b && ((g[4] = b[4]), (g[5] = b[5]));
+    }
+    const z = tot(g),
+      E = area(g);
+    (E > 0 ? ((a += p * z), (i += p * E)) : f.push(r), (o += p));
+    for (const [h, k] of Object.entries(ev(g))) l[h] = (l[h] || 0) + p * k;
+    for (const h of IT[g[0]] || []) {
+      const k = h.match(/^(.+) – ([\d.]+)(?:\/([\d.]+))?$/);
+      if (!k) continue;
+      const x = stem(k[1]),
+        C = c[x] || (c[x] = { n: k[1], F: {}, W: 0 }),
+        I = p * parseFloat(k[2]);
+      (k[1].length < C.n.length && (C.n = k[1]), k[3] ? (C.F[k[3]] = (C.F[k[3]] || 0) + I) : (C.W += I));
+    }
+    {
+      const h = g[0].startsWith("csv:") ? g[0] + JSON.stringify(g[8]) : g[0],
+        k = s.get(h);
+      if (k) k[1] += p;
+      else {
+        const x = [g, p, eff(g), E > 0];
+        (s.set(h, x), t.push(x));
+      }
+    }
+  }),
+    t.sort((r, p) => p[2] - r[2]));
+  save && histSave(e, o, i, a);
+  const G = cmb(Object.entries(l)).sort((t, n) => t.ks[0] - n.ks[0]);
+  setHtml(
+    $("#o"),
+    `<div class="card"><div class="row"><span>${tl("f.bTotal")}</span><b>${fmt(o, 0)}</b></div><div class="row"><span>${tl("f.areaStreet")}</span><b>${fmt(i, 0)}</b></div><div class="row"><span>${tl("f.avgEff")}</span><b class="e">${i ? fmt(a / i) : "–"}</b></div></div>` +
+      histHtml(e) +
+      (G.length
+        ? `<h2>${tl("f.sums")}</h2><div class="card">` +
+          G.map((r) => `<div class="row"><span class="m">${cl(r.ks)}</span><b>${fmt(r.v)}</b></div>`).join("") +
+          "</div>"
+        : "") +
+      itSum(c) +
+      `${d ? lgSec(m, j, d) : ""}<h2>${tl("f.tab.eff")}</h2><input id="itf" list="itnames" placeholder="${tl("f.ph.search")}" value="${esc(ls("itf_" + e, ""))}" style="width:100%"><datalist id="itnames">${Object.values(
+        c,
+      )
+        .map((r) => trn(r.n))
+        .filter((r, i, a) => a.indexOf(r) === i)
+        .sort((a, b) => a.localeCompare(b))
+        .map((r) => `<option value="${esc(r)}">`)
+        .join("")}</datalist>${skUI(e)}<div id="gl"></div>` +
+      (n.length ? `<h2>${tl("f.unrecognized", { n: n.length })}</h2><div class="card m">${n.join("<br>")}</div>` : ""),
+  );
+  let S = ls("sk:" + e, "e");
+  const _ = ([r, p, v, g]) =>
+      `<div class="card"><div class="row"><b>${p}× ${nm(r)}</b><span class="e">${g ? fmt(v) : "–"}</span></div><div class="m">${g ? r[4] + " · " : tl("f.noSize")}${tl("f.sum")} ${fmt(p * tot(r))}${skx(S, skv(r, S, p))}${r[0].startsWith("csv:") ? "" : " · " + wl(r)}</div>${itl(r)}</div>`,
+    u = $("#itf"),
+    w = (r, p) => hay(r[0]).includes(p),
+    y = () => {
+      const r = u.value.trim().toLowerCase();
+      (sv("itf_" + e, u.value), (S = ls("sk:" + e, "e")));
+      const p = (r ? t.filter((v) => w(v, r)) : t.slice())
+        .map((v) => [v, skv(v[0], S, v[1])])
+        .sort(skc(S, ls("sd:" + e, 0)))
+        .map((v) => v[0]);
+      setHtml(
+        $("#gl"),
+        (r
+          ? `<div class="m" style="margin:0 2px 6px">${tl("f.hits", {
+              n: p.length,
+              b: fmt(
+                p.reduce((v, g) => v + g[1], 0),
+                0,
+              ),
+            })}</div>`
+          : "") + p.slice(0, 200).map(_).join(""),
+      );
+    };
+  ((u.oninput = y),
+    skBind(e, y),
+    document.querySelectorAll("#o [data-hc]").forEach(
+      (r) =>
+        (r.onclick = () => {
+          confirm(tl("f.hist.confirm")) && (sv("hist_" + e, []), rIm(e));
+        }),
+    ),
+    document.querySelectorAll("#o [data-xa]").forEach(
+      (r) =>
+        (r.onclick = () => {
+          const p = r.closest(".xf"),
+            v = p.querySelector("select").value,
+            g = parseFloat(p.querySelector("input").value.replace(",", "."));
+          if (isNaN(g)) return;
+          const z = { v: g };
+          if (v == "t") {
+            const h = prompt(tl("f.p.statName"));
+            if (!h) return;
+            ((z.n = h), (z.w = parseFloat((prompt(tl("f.p.weight"), "0") || "0").replace(",", ".")) || 0));
+          } else z.k = +v;
+          const E = r.dataset.xa;
+          ((LX[E] = LX[E] || []).push(z), sv("lgx", LX), rIm(e));
+        }),
+    ),
+    document.querySelectorAll("#o [data-xd]").forEach(
+      (r) =>
+        (r.onclick = () => {
+          const p = r.dataset.xd;
+          (LX[p].splice(+r.dataset.i, 1), LX[p].length || delete LX[p], sv("lgx", LX), rIm(e));
+        }),
+    ),
+    document.querySelectorAll("#o [data-q]").forEach(
+      (r) =>
+        (r.onclick = () => {
+          ((u.value = trn(r.dataset.q)), y(), u.scrollIntoView({ block: "center", behavior: "smooth" }));
+        }),
+    ),
+    y());
+}
+
+// Verlauf: bei jedem „Berechnen“/Datei-Import ein Schnappschuss (Anzahl, Fläche, Wert, Effizienz); gleicher Text + gleiche Gewichtung ersetzt den letzten
+const histKey = () => EI + "|" + W.join(","),
+  strHash = (s) => {
+    let h = 5381;
+    for (let k = 0; k < s.length; k++) h = ((h << 5) + h + s.charCodeAt(k)) | 0;
+    return h + ":" + s.length;
+  };
+function histSave(e, n, ar, v) {
+  if (!n) return;
+  const L = ls("hist_" + e, []),
+    z = { t: Date.now(), n, ar, v, e: ar ? v / ar : 0, s: histKey(), h: strHash(ls("imp_" + e, "")) },
+    p = L[L.length - 1];
+  p && p.h == z.h && p.s == z.s ? (L[L.length - 1] = z) : L.push(z);
+  sv("hist_" + e, L.slice(-100));
+}
+function histHtml(e) {
+  const L = ls("hist_" + e, []);
+  if (!L.length) return "";
+  const dl = (x, d) => (x > 0 ? "+" : "") + fmt(x, d),
+    a = L[L.length - 1],
+    p = L[L.length - 2],
+    dt = (t) =>
+      new Date(t).toLocaleString(LG == "de" ? "de-DE" : "en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+  let g = "";
+  if (L.length > 1) {
+    const ys = L.map((x) => x.e),
+      lo = Math.min(...ys),
+      hi = Math.max(...ys),
+      pts = ys.map((y, k) => [6 + (k * 288) / (L.length - 1), 64 - (hi > lo ? ((y - lo) / (hi - lo)) * 56 : 28)]);
+    g = `<svg viewBox="0 0 300 70" style="width:100%;height:70px;display:block;margin:6px 0"><polyline fill="none" stroke="var(--a)" stroke-width="2" points="${pts.map((q) => q.map((x) => x.toFixed(1)).join(",")).join(" ")}"/>${pts.map((q) => `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="2.5" fill="var(--a)"/>`).join("")}</svg>`;
+  }
+  return (
+    `<h2>${tl("f.hist.title")}</h2><div class="card">${g}` +
+    (p
+      ? `<div class="row"><span class="m">${tl("f.hist.delta")}</span><span>${dl(a.e - p.e, 2)} <span class="m">· ${dl(a.n - p.n, 0)} · ${dl(a.ar - p.ar, 0)} · ${dl(a.v - p.v, 0)}</span></span></div>` +
+        (a.s != p.s ? `<div class="m" style="font-size:12px">${tl("f.hist.note")}</div>` : "")
+      : "") +
+    L.slice(-6)
+      .reverse()
+      .map(
+        (x) =>
+          `<div class="row"><span class="m">${dt(x.t)}</span><span>${fmt(x.n, 0)} · ${fmt(x.ar, 0)} · <b class="e">${fmt(x.e)}</b></span></div>`,
+      )
+      .join("") +
+    `<div class="row" style="margin-top:6px"><span class="m" style="font-size:12px">${tl("f.hist.legend")}</span><button class="s" data-hc="1">${tl("f.hist.clear")}</button></div></div>`
+  );
+}
+</script><script>
+// CSV-/Textimport: Zeichensatz-Korrektur, Parser, Spaltenzuordnung (csvRows, fnd, fromCsv, ent …)
+// Teil 6/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
+const CP = {
+  "€": 128,
+  "‚": 130,
+  ƒ: 131,
+  "„": 132,
+  "…": 133,
+  "†": 134,
+  "‡": 135,
+  ˆ: 136,
+  "‰": 137,
+  Š: 138,
+  "‹": 139,
+  Œ: 140,
+  Ž: 142,
+  "‘": 145,
+  "’": 146,
+  "“": 147,
+  "”": 148,
+  "•": 149,
+  "–": 150,
+  "—": 151,
+  "˜": 152,
+  "™": 153,
+  š: 154,
+  "›": 155,
+  œ: 156,
+  ž: 158,
+  Ÿ: 159,
+};
+function fixEnc(e) {
+  if (((e = e.replace(/^\uFEFF/, "")), !/[ÃÂ][\u0080-¿Œ-™]/.test(e))) return e;
+  try {
+    const t = new TextDecoder("utf-8").decode(
+      Uint8Array.from(
+        [...e].map((n) => {
+          const s = n.charCodeAt(0);
+          return s < 256 ? s : (CP[n] ?? 63);
+        }),
+      ),
+    );
+    return (t.match(/�/g) || []).length > 3 ? e : t;
+  } catch {
+    return e;
+  }
+}
+function csvRows(e) {
+  const t = [",", ";", "	"]
+      .map((o) => [
+        o,
+        e
+          .split(
+            `
+`,
+          )[0]
+          .split(o).length,
+      ])
+      .sort((o, l) => l[1] - o[1])[0][0],
+    n = [];
+  let s = [],
+    a = "",
+    i = !1;
+  for (let o = 0; o < e.length; o++) {
+    const l = e[o];
+    i
+      ? l == '"'
+        ? e[o + 1] == '"'
+          ? ((a += '"'), o++)
+          : (i = !1)
+        : (a += l)
+      : l == '"'
+        ? (i = !0)
+        : l == t
+          ? (s.push(a), (a = ""))
+          : l ==
+                `
+` || l == "\r"
+            ? (l == "\r" &&
+                e[o + 1] ==
+                  `
+` &&
+                o++,
+              s.push(a),
+              (a = ""),
+              s.some((c) => c.trim()) && n.push(s),
+              (s = []))
+            : (a += l);
+  }
+  return (s.push(a), s.some((o) => o.trim()) && n.push(s), n);
+}
+const nrm = (e) =>
+  e
+    .normalize("NFC")
+    .trim()
+    .replace(/\s*[-–—]\s*(?:St\.|Stufe|Lv\.|Level|Niv\.)\s*(\d+)/i, " $1");
+const noAkt = (e) => e.replace(/\s*[-–—(]\s*(?:aktiv|active)\s*\)?\s*$/i, "");
+let FAM;
+// Gebäudefamilie („Neo Basar 5“ → Neo Basar 8): Größe/Straße gelten für alle Stufen
+function fam(e) {
+  if (!FAM) {
+    FAM = {};
+    D.b.forEach((b) => {
+      [b[1], ...(N[b[0]] || [])].filter(Boolean).forEach((t) => {
+        const m = t.match(/^(.*\S)\s+(\d+)$/);
+        if (!m) return;
+        const k = fold(m[1]),
+          l = +m[2];
+        (!FAM[k] || l > FAM[k][0]) && (FAM[k] = [l, b]);
+      });
+    });
+  }
+  const k = fold(
+    noAkt(nrm(e))
+      .replace(/\s*\+\d+$/, "")
+      .replace(/\s+\d+$/, ""),
+  );
+  return (FAM[k] || [])[1];
+}
+function fnd(e) {
+  e = noAkt(nrm(e));
+  const t = [e, e.replace(/\s*\+\d+$/, ""), e.replace(/\s*\+\d+$/, "").replace(/\s+\d+$/, "")];
+  for (const n of t) {
+    const s = NM[n.toLowerCase()] || NF[fold(n)];
+    if (s) return s;
+  }
+  for (const n of t) {
+    if (!/[�?]/.test(n)) continue;
+    const s = new RegExp(
+      "^" +
+        fold(n)
+          .replace(/[.*+^${}()|[\]\\]/g, (a) => (a == "?" ? "?" : "\\" + a))
+          .replace(/[�?]+/g, "[a-z]{0,2}") +
+        "$",
+    );
+    for (const a in NF) if (s.test(a)) return NF[a];
+  }
+}
+const XNS = typeof XN < "u" ? XN : new Set(),
+  CM = {
+    strategy_points: "Forge Points",
+    "goods-previous": "Goods for Previous Era",
+    "goods-current": "Goods",
+    "goods-next": "Goods for Next Era",
+    clan_goods: "Guild Goods",
+    units: "Random Military Units",
+    "att_boost_attacker-all": "Attack% Boost for Attacking Army",
+    "att_boost_attacker-guild_expedition": "GE-specific Attack% Boost for Attacking Army",
+    "att_boost_attacker-battleground": "GBG-specific Attack% Boost for Attacking Army",
+    "att_boost_defender-all": "Attack% Boost for Defending Army",
+    "att_boost_defender-guild_expedition": "GE-specific Attack% Boost for Defending Army",
+    "att_boost_defender-battleground": "GBG-specific Attack% Boost for Defending Army",
+    guild_raids_coins_start: "Quantum Start Coins",
+    guild_raids_supplies_start: "Quantum Start Supplies",
+  },
+  SD = ["attacker", "defender"],
+  FT = ["all", "battleground", "guild_expedition"],
+  FB = [24, 28, 32],
+  CA = {
+    BG: "BG",
+    CoCa: "Katalysator",
+    SW: "Kriegsschiff",
+    CF: "CF",
+    SV: "Tresor",
+    AO: "AO",
+    Arc: "Arche",
+    AIC: "K.I.",
+    Alcatraz: "Alca",
+    AM: "Atlantis",
+    Atom: "Atomium",
+    Capitol: "Kapitol",
+    CoA: "AD",
+    Colosseum: "Kolosseum",
+    DC: "Deal",
+    FI: "Insel",
+    FoD: "Dresdner",
+    GS: "Gaea",
+    GT: "Galata",
+    HS: "Hagia",
+    HC: "Burg",
+    IT: "Inno",
+    LoA: "Leuchtturm",
+    LT: "Lotus",
+    ND: "Notre",
+    OoD: "Orakel",
+    RFP: "Regenwald",
+    RAH: "RAH",
+    SBC: "Basilius",
+    SC: "WF",
+    SN: "Needle",
+    SMB: "MD",
+    ToR: "Tempel",
+    Habitat: "Habitat",
+    Kraken: "Kraken",
+    VP: "Virgo",
+    ToB: "Babel",
+    TT: "Friedensturm",
+    V1: "Voyager",
+    CC: "Cape",
+    CdM: "CDM",
+    SG: "Gazer",
+    TA: "TA",
+    Pegasus: "Pegasus",
+    Centaurus: "Centaurus",
+    Hydra: "Hydra",
+    Obs: "Obsi",
+    Zeus: "Zeus",
+  };
+const LGK = {
+  "cape canaveral": "Cape",
+  "castel del monte": "CDM",
+  observatorium: "Obsi",
+  observatory: "Obsi",
+  "saturn vi gate centaurus": "Centaurus",
+  "saturn vi tor centaurus": "Centaurus",
+  "saturn vi gate hydra": "Hydra",
+  "saturn vi tor hydra": "Hydra",
+  "saturn vi gate pegasus": "Pegasus",
+  "saturn vi tor pegasus": "Pegasus",
+  "star gazer": "Gazer",
+  "statue of zeus": "Zeus",
+  zeusstatue: "Zeus",
+  "voyager v1": "Voyager",
+  "terracotta army": "TA",
+  "terrakotta-armee": "TA",
+};
+let LGR;
+function lgl(e) {
+  try {
+    if (!LGR) {
+      const n = localStorage.getItem("lg-active-profile") || "p1";
+      LGR = JSON.parse(localStorage.getItem("lg-levels:" + n) || localStorage.getItem("lg-levels") || "{}");
+    }
+  } catch {
+    LGR = {};
+  }
+  const n = nrm(e).toLowerCase(),
+    t = CA[LGA[n]] || LGK[n];
+  return Math.round(+(LGR && LGR[t])) || 0;
+}
+function lgi(e, t) {
+  const n = LGA[nrm(e).toLowerCase()],
+    s = n && typeof LGI < "u" && LGI[n];
+  if (!s) return 0;
+  const a = s.i.filter((l) => t[l]);
+  if (!a.length) return 0;
+  let i = 0,
+    o = 0;
+  return (
+    s.v.forEach((l, c) => {
+      a.every((d) => {
+        const f = l[s.i.indexOf(d)],
+          m = t[d];
+        return Math.abs(f - m) <= Math.max(0.51, Math.abs(m) * 0.005);
+      }) && (o++, (i = c + 1));
+    }),
+    o == 1 ? i : 0
+  );
+}
+function lgv(e, t) {
+  const n = LGA[nrm(e).toLowerCase()],
+    s = n && LGV[n];
+  if (((t = Math.round(+t)), !s || !(t >= 1))) return null;
+  const a = s.v.length,
+    i = Math.min(t, a),
+    o = s.v[i - 1],
+    l = {};
+  s.i.forEach((d, f) => {
+    o[f] && (l[d] = o[f]);
+  });
+  let c = "";
+  if (t > a) c = tl("f.tblMax", { n: a });
+  else {
+    const d = (s.x || []).find(([f, m]) => t >= f && t <= m);
+    d && (c = tl("f.tblNew", { n: t, m: d[0] - 1 }));
+  }
+  return { v: l, note: c };
+}
+function fromCsv(e, t, n) {
+  const s = {};
+  for (const [a, i] of Object.entries(CM)) {
+    const o = t[a],
+      l = D.labels.indexOf(i);
+    o && l >= 0 && (s[l] = o);
+  }
+  return (
+    FT.forEach((a, i) =>
+      SD.forEach((o, l) => {
+        const c = FB[i] + 2 * l,
+          d = t["att_boost_" + o + "-" + a] || 0,
+          f = t["def_boost_" + o + "-" + a] || 0,
+          m = t["att_def_boost_" + o + "-" + a] || 0;
+        n && d && !f && !m
+          ? (s[c] = s[c + 1] = d / 2)
+          : (d || f || m) && (d + m && (s[c] = d + m), f + m && (s[c + 1] = f + m));
+      }),
+    ),
+    Object.keys(s).length ? ["csv:" + e, nrm(e), "", "CSV", "0x0", 0, 0, 0, s] : null
+  );
+}
+const SKIPK = /^(#|level|lvl|stufe|stage|anzahl|count|amount|menge|name|geb.ude|building|id|bewertung)$/,
+  CMK = new Set(Object.keys(CM)),
+  unm = (e) =>
+    Object.entries(e).filter(
+      ([t, n]) =>
+        n &&
+        !SKIPK.test(t) &&
+        !CMK.has(t) &&
+        !/^(att|def|att_def)_boost_(attacker|defender)-(all|battleground|guild_expedition)$/.test(t),
+    ),
+  unh = (e) =>
+    e && e.length
+      ? `<div class="m" style="font-size:12px;margin-top:6px;word-break:break-all">${tl("f.unassigned")} ${e
+          .slice(0, 10)
+          .map(([t, n]) => esc(t) + "=" + n)
+          .join(" · ")}${e.length > 10 ? " …" : ""}</div>`
+      : "";
+// JSON-Export der Bewertungsliste (Array von Objekten mit denselben Spalten wie die CSV) -> Zeilen wie bei der CSV
+function jsonRows(e) {
+  const t = e.trim();
+  if (!/^[[{]/.test(t)) return null;
+  let d;
+  try {
+    d = JSON.parse(t);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(d)) d = Object.values(d).find(Array.isArray);
+  if (!d) return null;
+  const num = (v) => parseFloat(String(v).replace(",", ".")) || 0,
+    pick = (o, re) => {
+      const k = Object.keys(o).find((x) => re.test(x.trim().toLowerCase()));
+      return k == null ? undefined : o[k];
+    };
+  return d
+    .filter((o) => o && typeof o == "object")
+    .map((o) => [
+      String(pick(o, /^(geb.ude|building|name)$/) ?? "").trim(),
+      num(pick(o, /^(#|anzahl|amount|count|menge)$/)),
+      Object.fromEntries(Object.entries(o).map(([k, v]) => [k.trim().toLowerCase(), num(v)])),
+    ])
+    .filter((i) => i[0] && i[1]);
+}
+function ent(e) {
+  const j = jsonRows(e);
+  if (j) return j;
+  const t = csvRows(e),
+    n = (t[0] || []).map((i) => i.trim().toLowerCase()),
+    s = n.findIndex((i) => /^(geb.ude|building|name)$/.test(i) || i.startsWith("geb")),
+    a = n.findIndex((i) => i == "#" || /anzahl|amount|count|menge/.test(i));
+  return s >= 0 && a >= 0
+    ? t
+        .slice(1)
+        .map((i) => [
+          (i[s] || "").trim(),
+          parseFloat((i[a] || "").replace(",", ".")),
+          Object.fromEntries(n.map((o, l) => [o, parseFloat((i[l] || "").replace(",", ".")) || 0])),
+        ])
+        .filter((i) => i[0] && i[1])
+    : e
+        .split(
+          `
+`,
+        )
+        .map((i) => {
+          const o = i.trim().match(/^(.*?)[\t;,]\s*"?(\d+(?:[.,]\d+)?)"?\s*$/);
+          return o && [o[1].trim().replace(/^"|"$/g, ""), parseFloat(o[2].replace(",", "."))];
+        })
+        .filter((i) => i && i[0] && i[1]);
+}
+</script><script>
+// Tab „Verbündete“ (vAl …): Bestand, Matrix, Rechner, Platziert
+// Teil 7/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
+const RA = ["common", "uncommon", "rare", "epic", "legendary"];
+// Spezialeffekte (Text, Matrix-Spalte „Unit Type“/„Ally Ability“) – stehen nicht in data/jA.js (nur Zahlenwerte)
+const AX = {
+  "King Arthur|rare": "[Unit Type NextEra] Heavy – 1",
+  "King Arthur|legendary": "[Ally Ability] Contact Chance for GBG Heavy x200 – 1",
+  "Merlin|rare": "[Unit Type NextEra] Ranged – 1",
+  "Merlin|legendary": "[Ally Ability] Flying Chance for GBG Ranged x200 – 1",
+  "Morgan le Fay|rare": "[Unit Type NextEra] Artillery – 1",
+  "Morgan le Fay|legendary": "[Ally Ability] MIRV Chance for GBG Artillery x200 – 1",
+  "Louis Pasteur|rare": "[Unit Type] Ranged – 1",
+  "Louis Pasteur|legendary": "[Ally Ability] Reactive Armor 4 Chance for GBG Ranged x75 – 1",
+  "Florence Nightingale|rare": "[Unit Type] Heavy – 1",
+  "Florence Nightingale|legendary": "[Ally Ability] Morale Chance for Heavy x180 – 1",
+  "Miyamoto Musashi|rare": "[Unit Type] Light – 1",
+  "Miyamoto Musashi|legendary": "[Ally Ability] Close Quarters Chance for GBG Light x10 – 1",
+  "Nakano Takeko|rare": "[Unit Type] Artillery – 1",
+  "Nakano Takeko|legendary": "[Ally Ability] Dug Chance for GEX Artillery x25 – 1",
+  "Matilda of Tuscany|rare": "[Unit Type] Fast – 1",
+  "Matilda of Tuscany|legendary": "[Ally Ability] Poison Chance for GBG Fast x200 – 1",
+  "Jayavarman VII|rare": "[Unit Type] Light – 1",
+  "Jayavarman VII|legendary": "[Ally Ability] Frenzy Chance for GBG Light x200 – 1",
+  "Margaret I of Denmark|rare": "[Unit Type] Heavy – 1",
+  "Margaret I of Denmark|legendary": "[Ally Ability] Power Shot Chance for Heavy x200 – 1",
+};
+const rt = (r) => tl("f.rar." + r),
+  aty = (t) => (LG == "de" && { military: "Militär", science: "Wissenschaft" }[t]) || t,
+  AXU = {
+    Heavy: "Schwere Einheit",
+    Light: "Leichte Einheit",
+    Ranged: "Fernkämpfer",
+    Artillery: "Artillerie",
+    Fast: "Schnelle Einheit",
+  },
+  AXA = {
+    Contact: "Kontakt",
+    Flying: "Fliegend",
+    MIRV: "MIRV",
+    "Reactive Armor 4": "Reaktivpanzerung 4",
+    Morale: "Moral",
+    Dug: "Eingraben",
+    Poison: "Gift",
+    Frenzy: "Raserei",
+    "Power Shot": "Mega-Schuss",
+    "Close Quarters": "Auge in Auge",
+  };
+// Spezialeffekt-Text ins Deutsche (nur bei DE; Namen der Fähigkeiten sind eigene Übersetzungen)
+function axT(x) {
+  if (LG != "de") return x;
+  let m = /^(\w+) – (\d+)$/.exec(x);
+  if (m && AXU[m[1]]) return AXU[m[1]] + " – " + m[2];
+  m = /^(.+?) Chance for (?:(GBG|GEX) )?(\w+) x(\d+) – (\d+)$/.exec(x);
+  return m && AXA[m[1]] && AXU[m[3]]
+    ? `${AXA[m[1]]}-Chance für ${m[2] ? (m[2] == "GBG" ? "GG " : "GEx ") : ""}${AXU[m[3]]} x${m[4]} – ${m[5]}`
+    : x;
+}
+const AXK = { "Unit Type": "f.al.spUt", "Unit Type NextEra": "f.al.spUtN", "Ally Ability": "f.al.spAb" };
+function axRows(n, r, l) {
+  return RA.slice(0, RA.indexOf(r) + 1)
+    .map((x) => axRow(n, x, l))
+    .join("");
+}
+// Fähigkeits-Chance (%): Start + aufrunden((Ende - Start) * Position / (Maxlevel - 1)); Erwartungswert = Chance * Faktor (xN im Text)
+// 33 Schritte auf 100 Level: der Rest-Level liegt in der Mitte (ab Level Max/2 Position = Level - 2, sonst Level - 1); an Spielwerten gemessen, keine offizielle Quelle
+function axChance(a, l) {
+  const c = Math.round(a[5] * 100),
+    e = Math.round(a[6] * 100),
+    p = l < a[4] / 2 ? l - 1 : l - 2;
+  return c + Math.ceil(((e - c) * p) / (a[4] - 1) - 1e-9);
+}
+function axRow(n, r, l) {
+  const x = AX[n + "|" + r],
+    m = x && /^\[(.+?)\]\s*(.*)$/.exec(x);
+  if (!m) return "";
+  let h = `<div class="row"><span class="m">${tl(AXK[m[1]] || "f.al.sp")}</span><span>${axT(m[2])}</span></div>`;
+  const a = m[1] == "Ally Ability" && A.m.find((i) => i[0] == n && i[2] == r),
+    f = a && /x(\d+)/.exec(m[2]);
+  if (a && f) {
+    const k = +f[1] / 100,
+      c0 = axChance(a, 1),
+      c1 = axChance(a, a[4]),
+      c = l ? axChance(a, Math.max(1, Math.min(a[4], l))) : 0;
+    h += `<div class="row"><span class="m">${tl("f.al.spCh")}</span><span>${l ? `${c} %` : `${c0} % → ${c1} %`}</span></div><div class="row"><span class="m">${tl("f.al.spEv")}</span><span>${l ? fmt(c * k) : `${fmt(c0 * k)} → ${fmt(c1 * k)}`}</span></div>`;
+  }
+  return h;
+}
+function aEff(e, t, n) {
+  const s = RA.indexOf(t) + 1;
+  let a = 0;
+  return (
+    A.m.forEach((i) => {
+      if (i[0] !== e || i[3] > s) return;
+      const o = i[5] + Math.floor(((i[6] - i[5]) * (n - 1)) / (i[4] - 1) + i[7]);
+      for (const [l, c] of Object.entries(i[8])) a += W[l] * c * o;
+    }),
+    a
+  );
+}
+function aVals(e, t, n) {
+  const s = RA.indexOf(t) + 1,
+    r = {};
+  A.m.forEach((i) => {
+    if (i[0] !== e || i[3] > s) return;
+    const o = i[5] + Math.floor(((i[6] - i[5]) * (n - 1)) / (i[4] - 1) + i[7]);
+    for (const [l, c] of Object.entries(i[8])) r[l] = (r[l] || 0) + c * o;
+  });
+  return r;
+}
+let al = ls("al", []).map((x) => (x[0] == "König Artus" ? ["King Arthur", x[1], x[2]] : x));
+function vAlC() {
+  const e = [...new Set(A.m.map((t) => t[0]))].sort();
+  (setHtml(
+    $("#av"),
+    `<div class="card"><select id="an">${e.map((t) => `<option value="${t}">${t}</option>`).join("")}</select><div class="row" style="margin-top:6px;gap:6px"><select id="ar">${RA.map((t) => `<option value="${t}">${rt(t)}</option>`).join("")}</select><input id="al" type="number" min="1" max="100" value="100" style="width:90px"><button class="s" id="aa">+</button></div></div><div id="ao"></div>`,
+  ),
+    ($("#aa").onclick = () => {
+      (al.push([$("#an").value, $("#ar").value, Math.max(1, Math.min(100, +$("#al").value || 1))]),
+        sv("al", al),
+        rAl());
+    }),
+    rAl());
+}
+let alv = ls("alv", "b"),
+  aq = "";
+const KG = ["", "GBG · ", "GE · "],
+  KT = ["f.kb.aa", "f.kb.da", "f.kb.ad", "f.kb.dd"],
+  kb = (e) => (e >= 24 && e < 36 ? KG[Math.floor((e - 24) / 4)] + tl(KT[(e - 24) % 4]) : D.labels[e]),
+  un = (e) => (/%/.test(D.labels[e]) ? "%" : ""),
+  kbm = (e) => {
+    const t = e[0],
+      n = kb(t);
+    return e.length > 1
+      ? t < 36
+        ? n.replace(tl("f.atk"), tl("f.atkDef"))
+        : n.replace("Attack%", "Attack & Defense%")
+      : n;
+  },
+  kbRows = (e) =>
+    cmb(Object.entries(e).sort((t, n) => t[0] - n[0]))
+      .map((t) => `<div class="row"><span class="m">${kbm(t.ks)}</span><span>+${fmt(t.v)}${un(t.ks[0])}</span></div>`)
+      .join(""),
+  myE = (e) => Object.entries(e[5]).reduce((t, [n, s]) => t + W[n] * s, 0);
+let asel = ls("asel", null);
+const selSet = () => new Set((asel || MY.map((e, t) => (e[3] ? t : -1))).filter((e) => e >= 0 && e < MY.length));
+function vAlB() {
+  const e = selSet(),
+    t = MY.map((i, o) => o).sort((i, o) => myE(MY[o]) - myE(MY[i])),
+    n = (i) => {
+      const o = MY[i];
+      return `<div class="card pick${e.has(i) ? " sel" : ""}" data-i="${i}"><div class="row"><b><span class="ck">${e.has(i) ? "☑" : "☐"}</span> ${o[0]}</b><span class="e">${fmt(myE(o))}</span></div><div class="m"><span class="chip${o[3] ? " on" : ""}">${o[3] ? tl("f.placedLc") : tl("f.notPlaced")}</span> ${rt(o[1])} · Level ${o[2]}</div><div class="it">${kbRows(o[5]) + axRows(o[0], o[1], o[2]) || `<div class="m">${tl("f.noBonus")}</div>`}</div></div>`;
+    },
+    s = () => {
+      const i = [...e].map((l) => MY[l]),
+        o = {};
+      (i.forEach((l) => {
+        for (const [c, d] of Object.entries(l[5])) o[c] = (o[c] || 0) + d;
+      }),
+        setHtml(
+          $("#as"),
+          `<div class="card"><div class="row"><span>${tl("f.selection", { a: i.length, b: MY.length })}</span><b class="e">${fmt(i.reduce((l, c) => l + myE(c), 0))}</b></div><div class="row" style="gap:6px;margin-top:8px;justify-content:flex-start"><button class="s" data-a="p">${tl("f.placed")}</button><button class="s" data-a="all">${tl("f.all")}</button><button class="s" data-a="none">${tl("f.none")}</button></div></div><h2>${tl("f.kbSel")}</h2><div class="card">${kbRows(o) || `<div class="m">${tl("f.nothingSel")}</div>`}</div>`,
+        ));
+    },
+    a = () => {
+      ((asel = [...e]), sv("asel", asel));
+    };
+  (setHtml($("#av"), `<div id="as"></div><h2>Allies</h2><div id="al3">${t.map(n).join("")}</div>`),
+    s(),
+    ($("#av").onclick = (i) => {
+      const o = i.target.closest("[data-a]");
+      if (o) {
+        const d = o.dataset.a;
+        (e.clear(),
+          d == "all" && MY.forEach((f, m) => e.add(m)),
+          d == "p" &&
+            MY.forEach((f, m) => {
+              f[3] && e.add(m);
+            }),
+          a(),
+          document.querySelectorAll("#al3 .card").forEach((f) => {
+            const m = e.has(+f.dataset.i);
+            (f.classList.toggle("sel", m), (f.querySelector(".ck").textContent = m ? "☑" : "☐"));
+          }),
+          s());
+        return;
+      }
+      const l = i.target.closest("#al3 .card");
+      if (!l) return;
+      const c = +l.dataset.i;
+      (e.has(c) ? e.delete(c) : e.add(c),
+        l.classList.toggle("sel", e.has(c)),
+        (l.querySelector(".ck").textContent = e.has(c) ? "☑" : "☐"),
+        a(),
+        s());
+    }));
+}
+function vAl() {
+  (setHtml(
+    $("#v"),
+    `<div class="row" style="gap:6px;margin-bottom:8px;justify-content:flex-start"><button class="s" data-m="b" style="opacity:${alv == "b" ? 1 : 0.5}">${tl("f.al.stock")}</button><button class="s" data-m="m" style="opacity:${alv == "m" ? 1 : 0.5}">${tl("f.al.matrix")}</button><button class="s" data-m="c" style="opacity:${alv == "c" ? 1 : 0.5}">${tl("f.al.calc")}</button></div><div id="av"></div>`,
+  ),
+    document.querySelectorAll("[data-m]").forEach(
+      (e) =>
+        (e.onclick = () => {
+          ((alv = e.dataset.m), sv("alv", alv), vAl());
+        }),
+    ),
+    ({ b: vAlB, m: vAlM, c: vAlC }[alv] || vAlB)());
+}
+function vAlM() {
+  (setHtml(
+    $("#av"),
+    `<input id="aq" type="search" placeholder="${tl("f.ph.allySearch")}" value="${aq}"><div id="al2"></div>`,
+  ),
+    ($("#aq").oninput = (e) => {
+      ((aq = e.target.value), lM());
+    }),
+    lM());
+}
+function lM() {
+  const e = aq.toLowerCase(),
+    t = A.m
+      .map((n) => [n, Object.entries(n[8]).reduce((s, [a, i]) => s + W[a] * i * n[6], 0)])
+      .filter(
+        ([n]) =>
+          !e ||
+          (n[0] + " " + trn(n[0]) + " " + n[2] + " " + rt(n[2]) + " " + n[1] + " " + aty(n[1]))
+            .toLowerCase()
+            .includes(e),
+      )
+      .sort((n, s) => s[1] - n[1]);
+  setHtml(
+    $("#al2"),
+    t
+      .slice(0, 150)
+      .map(
+        ([n, s]) =>
+          `<div class="card"><div class="row"><b>${n[0]}</b><span class="e">${fmt(s)}</span></div><div class="m">${rt(n[2])} · ${aty(n[1])} · ${tl("f.maxLevel", { n: n[4] })}</div><div class="it">${cmb(
+            Object.entries(n[8]).sort((a, i) => a[0] - i[0]),
+          )
+            .map(
+              (a) =>
+                `<div class="row"><span class="m">${kbm(a.ks)}</span><span>+${fmt(a.v * n[5])} → +${fmt(a.v * n[6])}${un(a.ks[0])}</span></div>`,
+            )
+            .join("")}${axRow(n[0], n[2])}</div></div>`,
+      )
+      .join("") + (t.length > 150 ? `<div class="m">${tl("f.more", { n: t.length - 150 })}</div>` : ""),
+  );
+}
+function rAl() {
+  let e = 0;
+  const t = al
+    .map(([n, s, a], i) => {
+      const o = aEff(n, s, a);
+      return (
+        (e += o),
+        `<div class="card"><div class="row"><span><b>${n}</b><div class="m">${rt(s)} · Lv ${a}</div></span><span><b class="e">${fmt(o)}</b> <button class="s" onclick="al.splice(${i},1);sv('al',al);rAl()">✕</button></span></div><div class="it">${kbRows(aVals(n, s, a)) + axRows(n, s, a) || `<div class="m">${tl("f.noBonus")}</div>`}</div></div>`
+      );
+    })
+    .join("");
+  setHtml(
+    $("#ao"),
+    (al.length
+      ? `<div class="card row"><span>${tl("f.total", { n: al.length })}</span><b class="e">${fmt(e)}</b></div>`
+      : "") + t,
+  );
+}
+</script><script>
+// Tab „Kits“: Suche nach produzierten Kits – Inhalt und produzierende Gebäude, jedes Gebäude einzeln und antippbar
+// Teil 7b/8; muss vor foeff-tab-trials.js geladen werden (dort steht der Start-Aufruf draw()).
+let kq = "",
+  kitIdx = null,
+  bIdx = null;
+// Anzeigename eines Kits je produzierendem Gebäude (nur Anzeige; Daten/Werte bleiben unter dem Original-Namen)
+const KIT_ALIAS = {
+  "Lagoon Hideout Selection Kit": {
+    "Siren's Treasure Rock": "Lagoon Hold Silver Selection Kit",
+    "Enchanted Siren's Treasure Rock": "Lagoon Stronghold Golden Selection Kit",
+  },
+};
+const kitName = (k, enName) => (KIT_ALIAS[k] && KIT_ALIAS[k][enName]) || k,
+  // Gebäude-Name (EN) -> Index in D.b (für det())
+  bIndex = () => {
+    if (!bIdx) {
+      bIdx = new Map();
+      D.b.forEach((b, i) => N[b[0]] && !bIdx.has(N[b[0]][0]) && bIdx.set(N[b[0]][0], i));
+    }
+    return bIdx;
+  },
+  bRow = (en, de, i, right) =>
+    `<div class="row"${i != null ? ` style="cursor:pointer" onclick="det(${i})"` : ""}><span class="m">${esc(LG === "de" ? de : en)}${right.ev ? ` · ${esc(evN(right.ev))}` : ""}</span>${right.amt ? `<span>${esc(right.amt)}</span>` : ""}</div>`;
+// Index: Kit (Anzeigename EN) -> Quellen [{id, en, de, ev, amt, orig}]
+function kitIndex() {
+  if (kitIdx) return kitIdx;
+  const m = new Map();
+  D.b.forEach((b, i) => {
+    const n = N[b[0]];
+    if (!n || isHid(b) || !IT[b[0]]) return;
+    for (const l of IT[b[0]]) {
+      const x = /^(.+ Kit) – (.+)$/.exec(l);
+      if (!x) continue;
+      const k = kitName(x[1], n[0]);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push({ i, en: n[0], de: n[1] || n[0], ev: b[3], amt: kitAmt(x[2]), raw: x[2], orig: x[1] });
+    }
+  });
+  // Kein Auswahl-Kit: ohne „Selection Kit“ im Namen und ohne erfassten Inhalt, dazu Erhabene, Pendragon, Plus/Reno/Selbsthilfe oder überall „x/150“
+  for (const [k, src] of [...m])
+    if (
+      !/Selection Kit/.test(k) &&
+      !(window.KC && (window.KC[k] || src.some((s) => window.KC[s.orig]))) &&
+      (/Upgrade Kit$|^Ascended |Pendragon|^(Mass )?Self-Aid Kit$|^One Up Kit$|^Renovation Kit$/.test(k) ||
+        src.every((s) => /\/150$/.test(s.raw)))
+    )
+      m.delete(k);
+  return (kitIdx = m);
+}
+function kitAmt(a) {
+  const x = /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(a);
+  return x ? fq(+x[1], +x[2]) : a;
+}
+function kitDeMap() {
+  if (!kcDe) {
+    kcDe = {};
+    for (const id in N) kcDe[N[id][0]] = N[id][1];
+  }
+  return kcDe;
+}
+// Inhalt eines Kits: Liste englischer Gebäudenamen (aus data/KC.js; Objekt = je nach produzierendem Gebäude)
+function kitContent(k, src) {
+  const kc = window.KC && window.KC[k];
+  if (Array.isArray(kc)) return [{ list: kc }];
+  const out = [];
+  for (const s of src) {
+    const o = window.KC && window.KC[s.orig];
+    if (!o || Array.isArray(o)) continue;
+    const fam = s.en.replace(/ \d+$/, ""),
+      c = o[fam];
+    if (c && !out.some((x) => x.fam === fam)) out.push({ fam, famDe: s.de.replace(/ \d+$/, ""), list: c });
+  }
+  return out;
+}
+function kitCard(k, src) {
+  const de = LG === "de",
+    bi = bIndex(),
+    dm = kitDeMap(),
+    name = de ? itd(k) || k : k,
+    cont = kitContent(k, src),
+    cRow = (b) => bRow(b, dm[b] || b, bi.has(b) ? bi.get(b) : null, {}),
+    cHtml = cont.length
+      ? cont
+          .map(
+            (c) =>
+              (c.fam ? `<div class="m" style="margin-top:4px">${esc(de ? c.famDe : c.fam)}:</div>` : "") +
+              c.list.map(cRow).join(""),
+          )
+          .join("")
+      : `<div class="m">${tl("f.kits.unknown")}</div>`,
+    sHtml = src
+      .slice()
+      .sort((a, b) => a.en.localeCompare(b.en, "en", { numeric: true }))
+      .map((s) => bRow(s.en, s.de, s.i, s))
+      .join("");
+  return `<div class="card"><div class="row"><b class="${kitCls(k).trim()}">${esc(name)}</b></div><h2>${tl("f.kits.content")}</h2>${cHtml}<h2>${tl("f.kits.from")}</h2>${sHtml}</div>`;
+}
+function kitList() {
+  if (!$("#kl")) return;
+  const e = kq.toLowerCase().trim(),
+    idx = kitIndex(),
+    dm = kitDeMap(),
+    kn = (k) => (LG === "de" ? itd(k) || k : k);
+  const all = [...idx.keys()]
+    .filter((k) => {
+      if (!e) return true;
+      const src = idx.get(k),
+        c = kitContent(k, src).flatMap((x) => x.list),
+        h = [k, itd(k) || "", ...src.flatMap((s) => [s.en, s.de]), ...c, ...c.map((b) => dm[b] || "")];
+      return h.join("\n").toLowerCase().includes(e);
+    })
+    .sort((a, b) => kn(a).localeCompare(kn(b), LG));
+  setHtml(
+    $("#kl"),
+    `<div class="m">${tl("f.kits.count", { n: all.length })}</div>` +
+      all
+        .slice(0, 40)
+        .map((k) => kitCard(k, idx.get(k)))
+        .join("") +
+      (all.length > 40 ? `<div class="m">${tl("f.more", { n: all.length - 40 })}</div>` : ""),
+  );
+}
+let kqT = 0;
+function vKits() {
+  (setHtml(
+    $("#v"),
+    `<input id="kq" type="search" placeholder="${tl("f.kits.ph")}" value="${esc(kq)}"><div id="kl"></div>`,
+  ),
+    ($("#kq").oninput = (e) => {
+      kq = e.target.value;
+      clearTimeout(kqT);
+      kqT = setTimeout(kitList, 120);
+    }),
+    kitList());
+}
+</script><script>
+// Tab „GG-Prüfung“ (vTr, cTr) und Start-Aufruf draw()
+// Teil 8/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
+let kk = ls("kk", 16789);
+function vTr() {
+  (setHtml(
+    $("#v"),
+    `<div class="g"><span>${tl("f.combatPower")}</span><input id="k" type="number" value="${kk}"></div><div id="o"></div>`,
+  ),
+    ($("#v").oninput = cTr),
+    cTr());
+}
+const TC = {
+  s: ["f.coin.s", "#B7B7B7"],
+  g: ["f.coin.g", "#F1C232"],
+  p: ["f.coin.p", "#8E7CC3"],
+  r: ["f.coin.r", "#38761D"],
+};
+function trLine(e, t, n) {
+  const c = t.length,
+    d = Math.max(...t.flatMap((u) => n.map((w) => u[w])), 1e-9),
+    f = (u) => 46 + (286 * u) / (c - 1),
+    m = (u) => 166 - (156 * u) / d,
+    j = [0, 0.25, 0.5, 0.75, 1]
+      .map((u) => {
+        const w = m(d * u);
+        return `<line x1="46" x2="332" y1="${w}" y2="${w}" stroke="var(--b)"/><text x="42" y="${w + 3}" text-anchor="end" font-size="9" fill="var(--m)">${fmt(d * u, d < 10 ? 2 : 0)}</text>`;
+      })
+      .join(""),
+    M = t
+      .map((u, w) =>
+        u.id % 5 == 0 || w == 0
+          ? `<text x="${f(w)}" y="181" text-anchor="middle" font-size="9" fill="var(--m)">${u.id}</text>`
+          : "",
+      )
+      .join(""),
+    G = n
+      .map(
+        (u) =>
+          `<polyline fill="none" stroke="${TC[u[0]][1]}" stroke-width="2" stroke-linejoin="round" points="${t.map((w, y) => f(y).toFixed(1) + "," + m(w[u]).toFixed(1)).join(" ")}"/>`,
+      )
+      .join(""),
+    S = t
+      .map(
+        (u, w) =>
+          `<rect x="${f(w) - 294 / c / 2}" y="10" width="${294 / c}" height="156" fill="transparent"><title>Trial ${u.id}: ${n.map((y) => tl(TC[y[0]][0]) + " " + fmt(u[y], 2)).join(" · ")}</title></rect>`,
+      )
+      .join(""),
+    _ = n
+      .map(
+        (u) =>
+          `<span><span style="display:inline-block;width:14px;height:3px;background:${TC[u[0]][1]};vertical-align:middle;margin-right:4px"></span>${tl(TC[u[0]][0])}</span>`,
+      )
+      .join("");
+  return `<div class="card"><div class="row" style="justify-content:flex-start;gap:12px;flex-wrap:wrap"><b>${e}</b></div><div class="m" style="display:flex;gap:12px;margin:4px 0">${_}</div><svg viewBox="0 0 340 190" width="100%" role="img" aria-label="${e}">${j}${G}${M}${S}</svg><div class="m" style="text-align:center">Trial</div></div>`;
+}
+function cTr() {
+  ((kk = +$("#k").value || 0), sv("kk", kk));
+  const e = D.att.slice(0, 151),
+    t = A.t.map((s) => {
+      const [a, i, o, l, , c, d, f, m, j, M, G, S] = [
+        s[0],
+        s[1],
+        s[2],
+        s[3],
+        s[4],
+        s[5],
+        s[6],
+        s[7],
+        s[8],
+        s[9],
+        s[10],
+        s[11],
+        s[12],
+      ];
+      let _ = 1e18,
+        u = 0;
+      e.forEach(([y, r]) => {
+        const p = Math.abs(r * o + i * (1 + l * 1.5) - kk);
+        p < _ && ((_ = p), (u = y));
+      });
+      const w = u * 5;
+      return {
+        id: a,
+        q: u,
+        bt: w,
+        s: d * f * m * w,
+        g: d * j * M * w,
+        p: d * G * S * w,
+        r: w * c * 550 * 8,
+        s1: d * f * m,
+        g1: d * j * M,
+        p1: d * G * S,
+      };
+    }),
+    n = (s) => t.reduce((a, i) => (i[s] > a[s] ? i : a));
+  setHtml(
+    $("#o"),
+    `<h2>${tl("f.coinsDayPower")}</h2>${trLine(tl("f.bgCoinsDay"), t, ["s", "g", "p"])}<h2>${tl("f.coinsEnc")}</h2>${trLine(tl("f.bgCoinsEnc"), t, ["s1", "g1", "p1"])}<h2>${tl("f.rpDay")}</h2>${trLine(tl("f.rpDay"), t, ["r"])}<h2>${tl("f.bestTrials")}</h2><div class="card">` +
+      [
+        [tl("f.coin.s"), "s"],
+        [tl("f.coin.g"), "g"],
+        [tl("f.coin.p"), "p"],
+        [tl("f.coin.r"), "r"],
+      ]
+        .map(([s, a]) => {
+          const i = n(a);
+          return `<div class="row"><span>${s}</span><b>Trial ${i.id} · ${fmt(i[a], 0)}</b></div>`;
+        })
+        .join("") +
+      `</div><h2>${tl("f.allTrials")}</h2>` +
+      t
+        .map(
+          (s) =>
+            `<div class="card"><div class="row"><b>Trial ${s.id}</b><span class="m">Attrition ${s.q} · ${tl("f.battles", { n: s.bt })}</span></div><div class="m">${tl("f.coin.s")} ${fmt(s.s, 0)} · ${tl("f.coin.g")} ${fmt(s.g, 0)} · ${tl("f.coin.p")} ${fmt(s.p, 0)} · RP ${fmt(s.r, 0)}</div></div>`,
+        )
+        .join(""),
+  );
+}
+draw();
+</script>
+
+</body></html>
