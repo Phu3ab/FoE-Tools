@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>City Planner</title>
+<link rel="stylesheet" href="css/tokens.css"><script src="js/theme.js"></script><link rel="stylesheet" href="css/city.css"><link rel="stylesheet" href="css/pick.css"></head><body>
+<div id="ttl"><button class="tgb" id="tgtop" data-i18n-title="ui.tools" title="Tools"></button><span data-i18n="ui.title">Planner</span><select id="era" data-ns title="Era" data-i18n-title="ui.eraTitle"></select><select id="lgs" title="Language" data-i18n-title="ui.lang"><option value="de">DE</option><option value="en">EN</option></select></div>
+<div id="top">
+<div class="tgrp"><button data-t="hand" title="Info / scroll" data-i18n-title="ui.infoScroll">✋</button><button data-t="sel" title="Multi-select (tap / drag frame)" data-i18n-title="ui.multiSelect">☑</button><button data-t="move" title="Move building (drag)" data-i18n-title="ui.moveBuilding">↔️</button></div>
+<div class="tgrp"><button data-t="exp" title="Expansion (drag)" data-i18n-title="ui.expansionDrag" data-i18n="ui.expShort">▦ Exp.</button><button data-t="build" title="Building (drag)" data-i18n-title="ui.buildingDrag">🏠</button><button data-t="street" title="Street (drag)" data-i18n-title="ui.streetDrag">🛣️</button><button data-t="erase" title="Delete building (drag)" data-i18n-title="ui.deleteBuilding">🗑️</button><button data-t="xexp" title="Remove expansion (drag)" data-i18n-title="ui.removeExpansion">▦✖</button></div>
+<div class="tgrp"><button id="fit" title="Show entire city" data-i18n-title="ui.showCity">⤢</button><button id="zo">−</button><button id="zi">+</button><button id="un" title="Undo" data-i18n-title="ui.undo" disabled>↩️</button><button id="re" title="Redo" data-i18n-title="ui.redo" disabled>↪️</button></div>
+<button id="more" title="More" data-i18n-title="ui.more">⋯</button>
+<div id="moreRow" hidden><button id="imp">📥 Import</button><button id="exp" title="Export">📤 Export</button><button id="rs">↺</button><input type="file" id="file" accept=".txt,.json,text/plain,application/json" hidden></div>
+<div style="display:flex;gap:4px;width:100%"><select id="lay" style="flex:1;min-width:0" title="Layout"></select><button id="ln" title="New layout" data-i18n-title="ui.newLayout">➕</button><button id="lc" title="Duplicate layout" data-i18n-title="ui.duplicateLayout">⧉</button><button id="lr" title="Rename" data-i18n-title="ui.rename">✏️</button><button id="ld" title="Delete layout" data-i18n-title="ui.deleteLayout">🗑</button></div>
+</div>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="st"></div>
+<div id="botbar"><button class="tgb" id="tgbot" data-i18n-title="ui.panel" title="Lists"></button></div>
+<div id="bot">
+<div id="erabox" hidden style="padding:6px 8px"><span data-i18n="ui.era">Era:</span> <select id="erasel" data-ns style="max-width:62%"></select> <span id="eran" style="color:var(--muted)"></span></div>
+<div id="strbox" hidden style="padding:6px 8px"><span data-i18n="ui.street">Street:</span> <select id="strsel" style="max-width:72%"></select></div>
+<div id="lvbox" hidden style="padding:6px 8px"><span data-i18n="ui.gbLevel">GB level:</span> <input id="lv" type="number" min="1" max="999" style="width:80px"> <span id="lvn" style="color:var(--muted)"></span></div>
+<details open id="dp"><summary data-i18n="ui.buildList">Build list</summary>
+<div style="display:flex;gap:4px;flex-wrap:wrap">
+<input id="q" placeholder="Search…" data-i18n-placeholder="ui.search" style="flex:1;min-width:100px">
+<select id="cat"><option value="" data-i18n="cat.all">All</option><option value="residential" data-i18n="cat.residential">Residential</option><option value="culture" data-i18n="cat.culture">Culture</option><option value="production" data-i18n="cat.production">Production</option><option value="goods" data-i18n="cat.goods">Goods</option><option value="military" data-i18n="cat.military">Military</option><option value="decoration" data-i18n="cat.decoration">Decoration</option><option value="greatbuilding" data-i18n="cat.gb">GB</option><option value="x" data-i18n="cat.other">Other</option></select>
+<label style="align-self:center"><input type="checkbox" id="only"> <span data-i18n="ui.thisEraOnly">this era only</span></label></div>
+<div id="pal"></div></details>
+<details id="bld"><summary data-i18n="ui.placedBuildings">Placed buildings</summary><div id="bl"></div></details>
+<details open><summary data-i18n="ui.values">Values</summary><div style="display:flex;gap:6px;align-items:center;margin:4px 0"><span id="mkl" style="white-space:nowrap"></span><input id="mk" type="text" inputmode="decimal" style="flex:1;min-width:0"></div><div id="val"></div></details>
+</div>
+<script src="city-data.js"></script><script src="data/jD.js"></script><script src="data/jEra.js"></script><script src="data/jLGA.js"></script><script src="data/jLGV.js"></script><script src="data/jLGI.js"></script><script src="data/jLGL.js"></script><script src="data/jIT.js"></script><script src="data/jITE.js"></script><script src="data/jIW0.js"></script>
+<script src="data/ITM.js"></script><script src="i18n/city.js"></script><script src="i18n/items.js"></script><script src="js/i18n-items.js"></script><script src="js/i18n-t.js"></script><script src="js/pick.js"></script><script src="js/city-core.js"></script><script src="js/city-layouts.js"></script><script src="js/city-calc.js"></script><script src="js/city-values.js"></script><script src="js/city-draw.js"></script><script src="js/city-plan.js"></script><script src="js/city-ui.js"></script><script src="js/city-pick.js"></script><script src="js/city-init.js"></script></body></html>

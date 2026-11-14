@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>Schedule reminders</title>
+<link rel="stylesheet" href="css/tokens.css"><script src="js/theme.js"></script><link rel="stylesheet" href="css/notify.css"><link rel="stylesheet" href="css/pick.css"></head><body>
+<header class="appbar">
+<h1 data-i18n="n.title">Zeitplan-Erinnerungen</h1>
+<select id="lgs" title="Language"><option value="de">DE</option><option value="en">EN</option></select>
+</header>
+
+<section>
+<h2 data-i18n="n.cycle">Zyklus</h2>
+<div class="grid2">
+<label><span data-i18n="n.anchor">Zyklusstart (erster Tag)</span><input type="date" id="anchor"></label>
+<label><span data-i18n="n.length">Zykluslänge</span><select id="cycle"></select></label>
+<label class="wide"><span data-i18n="n.tz">Zeitzone</span><select id="tz"></select></label>
+</div>
+<div class="info" id="info"></div>
+</section>
+
+<section>
+<h2 data-i18n="n.entries">Einträge</h2>
+<div id="list"></div>
+<button id="add" data-i18n="n.add">+ Eintrag</button>
+</section>
+
+<section>
+<h2 data-i18n="n.preview">Nächste Nachrichten</h2>
+<div id="prev"></div>
+</section>
+
+<section>
+<h2>Cloudflare Worker</h2>
+<div class="grid2">
+<label class="wide"><span data-i18n="n.url">Worker-URL</span><input type="url" id="url" placeholder="https://foe-reminders.NAME.workers.dev" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+<label class="wide"><span data-i18n="n.token">Zugriffs-Token</span><input type="password" id="token" autocomplete="off"></label>
+</div>
+<div class="btns">
+<button id="send" class="main" data-i18n="n.send">Zeitplan senden</button>
+<button id="test" data-i18n="n.test">Test senden</button>
+<button id="load" data-i18n="n.load">Vom Worker laden</button>
+</div>
+<div class="sync" id="sync"></div>
+<div class="status" id="st"></div>
+</section>
+
+<script src="i18n/notify.js"></script><script src="js/i18n-t.js"></script><script src="js/pick.js"></script><script src="js/notify.js"></script>
+</body></html>

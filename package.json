@@ -1,0 +1,12 @@
+{
+  "name": "foe-tools",
+  "private": true,
+  "description": "FoE Tools (PWA). Kein Build-Schritt; package.json dient nur als Sammlung der Befehle.",
+  "scripts": {
+    "format": "prettier --write js css",
+    "test": "python3 tests/smoke.py && python3 tests/flow_test.py && python3 tests/calc_test.py && python3 tests/i18n_check.py && python3 tools/data_checksums.py",
+    "release": "python3 tools/release.py ../out",
+    "lint": "python3 tools/lint.py",
+    "format:check": "prettier --check js css"
+  }
+}
