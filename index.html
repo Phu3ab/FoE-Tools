@@ -12,7 +12,1532 @@
 <meta name="apple-mobile-web-app-title" content="FoE Tools">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="css/tokens.css"><script src="js/theme.js"></script><link rel="stylesheet" href="css/index.css"><link rel="stylesheet" href="css/pick.css">
+<style>
+/* Gemeinsame Design-Tokens aller Seiten (index, foeff, city, notify, Powerlevel im Shadow-DOM).
+   Farbrollen: Gold (--accent) = Primäraktion + Ergebniszahlen, Blau (--accent2) = Auswahl/Fokus,
+   Rot (--danger) = Gefahr, Grün (--ok) = Erfolg. Themes über html[data-theme]: dark (Standard), amoled, light (js/theme.js). */
+:root {
+  --bg: #1a1f2e;
+  --bg2: #141824;
+  --panel: #232a3d;
+  --panel2: #2a3350;
+  --in: #10141f;
+  --border: #333d54;
+  --text: #e8e6df;
+  --muted: #8a92a6;
+  --accent: #d4a94b;
+  --accent2: #6fa8dc;
+  --on-accent: #10141f;
+  --sel: #253048;
+  --danger: #e07856;
+  --danger2: #e07a7a;
+  --ok: #7fc98f;
+  --warn: #e08a5b;
+  --overlay: #0009;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --glow: rgba(212, 169, 75, 0.35);
+  --glow2: rgba(111, 168, 220, 0.35);
+  --tint: rgba(111, 168, 220, 0.08);
+  --r: 10px;
+  --r-s: 6px;
+  --sp: 12px;
+  --bar-h: 48px;
+  --nav-h: 58px;
+  --f-title: 1.1rem;
+  --f-section: 0.95rem;
+  --f-small: 0.8rem;
+  color-scheme: dark;
+}
+:root[data-theme="amoled"] {
+  --bg: #000;
+  --bg2: #000;
+  --panel: #0f121a;
+  --panel2: #171c28;
+  --in: #07090e;
+  --border: #252c3d;
+  --sel: #141c2e;
+  --overlay: #000b;
+}
+:root[data-theme="light"] {
+  --bg: #f3efe6;
+  --bg2: #ebe6da;
+  --panel: #fffdf8;
+  --panel2: #f6f1e6;
+  --in: #ffffff;
+  --border: #d8d0bf;
+  --text: #232733;
+  --muted: #646b7c;
+  --accent: #9a6b00;
+  --accent2: #1f6aa8;
+  --on-accent: #ffffff;
+  --sel: #e3edf7;
+  --danger: #c2410c;
+  --danger2: #c0392b;
+  --ok: #2e7d32;
+  --warn: #b45309;
+  --overlay: #0006;
+  --shadow: rgba(60, 50, 20, 0.18);
+  --glow: rgba(154, 107, 0, 0.3);
+  --glow2: rgba(31, 106, 168, 0.3);
+  --tint: rgba(31, 106, 168, 0.08);
+  color-scheme: light;
+}
+/* Einheitliche Kopfzeile: Titel links, Sprach- und Theme-Knopf (fixiert) rechts */
+.appbar,
+header.appbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--bar-h);
+  padding: 6px 118px 6px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.appbar h1,
+h1.appbar,
+.appbar .ttl {
+  margin: 0;
+  padding: 0;
+  font-size: var(--f-title);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.appbar h1::before,
+h1.appbar::before,
+.appbar .ttl::before {
+  content: "";
+  width: 4px;
+  height: 1.1em;
+  border-radius: 2px;
+  background: var(--accent);
+  flex: none;
+}
+/* Theme-Knopf (js/theme.js): links neben der Sprachwahl */
+button.thmb {
+  position: fixed;
+  top: 8px;
+  right: 74px;
+  z-index: 30;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--in);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+button.thmb svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Zahlen: gleich breite Ziffern, damit Spalten bündig bleiben */
+.num,
+.val,
+.res,
+td,
+input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+/* Ergebniskarte: abgesetzt, große Zahl in Gold */
+.result {
+  background: linear-gradient(135deg, var(--panel2), var(--panel));
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  box-shadow: 0 2px 10px var(--shadow);
+}
+.result .big {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+/* Chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  margin: 0 4px 3px 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--in);
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.chip.ev {
+  color: var(--accent2);
+  border-color: var(--accent2);
+}
+.chip.sz {
+  color: var(--text);
+}
+.chip.lt {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+.chip.st {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.chip.on {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.chip.zero {
+  opacity: 0.55;
+}
+h1.appbar {
+  padding: 6px 118px 6px 14px;
+  background: transparent;
+  border: 0;
+}
+h1.appbar > span:last-child {
+  margin-left: auto;
+}
+</style><script>
+// Theme (dark / amoled / light) für alle Seiten: html[data-theme], Knopf neben der Sprachwahl, Sync über localStorage (`foeff:theme`, JSON wie `foeff:lang`).
+(function () {
+  var K = "foeff:theme",
+    T = ["dark", "amoled", "light"],
+    BAR = { dark: "#1a1f2e", amoled: "#000000", light: "#f3efe6" },
+    N = {
+      en: { dark: "Dark", amoled: "AMOLED black", light: "Light", t: "Theme" },
+      de: { dark: "Dunkel", amoled: "AMOLED-Schwarz", light: "Hell", t: "Design" },
+    },
+    I = {
+      dark: '<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+      amoled:
+        '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg>',
+      light:
+        '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    };
+  function get() {
+    try {
+      var v = JSON.parse(localStorage.getItem(K));
+      return T.indexOf(v) < 0 ? "dark" : v;
+    } catch (e) {
+      return "dark";
+    }
+  }
+  function lang() {
+    try {
+      return JSON.parse(localStorage.getItem("foeff:lang")) === "de" ? "de" : "en";
+    } catch (e) {
+      return "en";
+    }
+  }
+  function apply() {
+    var t = get();
+    document.documentElement.setAttribute("data-theme", t);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute("content", BAR[t]);
+    var b = document.getElementById("thmb");
+    if (b) {
+      var n = N[lang()];
+      b.innerHTML = I[t];
+      b.title = n.t + ": " + n[t];
+      b.setAttribute("aria-label", b.title);
+    }
+  }
+  apply();
+  document.addEventListener("change", function (e) {
+    if (e.target && /^(lgSel|lgs|lg)$/.test(e.target.id)) setTimeout(apply, 0);
+  });
+  window.addEventListener("storage", function (e) {
+    if (e.key === K || e.key === "foeff:lang" || e.key === null) apply();
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.id = "thmb";
+    b.className = "thmb";
+    b.addEventListener("click", function () {
+      var t = T[(T.indexOf(get()) + 1) % T.length];
+      try {
+        localStorage.setItem(K, JSON.stringify(t));
+      } catch (e) {
+        /* ohne Speicher: nur diese Sitzung */
+      }
+      document.documentElement.setAttribute("data-theme", t);
+      apply();
+    });
+    document.body.appendChild(b);
+    apply();
+  });
+})();
+</script><style>
+:root {
+  --t: var(--text);
+  --b: var(--border);
+  --m: var(--muted);
+  --c: var(--panel);
+  --a: var(--accent);
+  --a2: var(--accent2);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family:
+    Segoe UI,
+    system-ui,
+    sans-serif;
+  background: linear-gradient(160deg, var(--bg), var(--bg2));
+  color: var(--text);
+  padding: 0 12px;
+}
+h1 {
+  font-size: 1.3rem;
+  margin: 0 0 4px;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+h2.section {
+  font-size: 1rem;
+  color: var(--accent2);
+  margin: 0 0 10px;
+}
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.collapse-arrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  transition: transform 0.15s ease;
+}
+.gmix-head {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--accent2);
+  margin-bottom: 10px;
+}
+.gmix .go-arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.gmix-closed .go-arrow {
+  transform: rotate(-90deg);
+}
+.gmix-closed .gmix-body {
+  display: none;
+}
+.gmix-closed .gmix-head {
+  margin-bottom: 0;
+}
+.mix-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.mix-name {
+  flex: 1 1 150px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.mix-name.on {
+  color: var(--accent2);
+}
+.mix-boxes {
+  display: flex;
+  gap: 3px;
+}
+.mix-box {
+  display: block;
+  position: relative;
+  margin: 0;
+  cursor: pointer;
+}
+.mix-box input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.mix-box span {
+  display: block;
+  min-width: 32px;
+  text-align: center;
+  padding: 6px 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--in);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 4px;
+  user-select: none;
+}
+.mix-box input:checked + span {
+  background: var(--accent2);
+  color: var(--on-accent);
+  border-color: var(--accent2);
+}
+.mix-box input:focus-visible + span {
+  outline: 2px solid var(--accent);
+}
+.mix-reset:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.mix-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+.sn-row {
+  display: grid;
+  grid-template-columns: 72px repeat(4, 1fr) 64px;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+.sn-row input {
+  padding: 4px 6px;
+  font-size: 0.8rem;
+  width: 100%;
+  min-width: 0;
+}
+.sn-h {
+  color: var(--muted);
+}
+.panel.collapsed .collapse-arrow {
+  transform: rotate(-90deg);
+}
+.panel.collapsed .panel-body {
+  display: none;
+}
+.panel.collapsed h2.section {
+  margin-bottom: 0;
+}
+.profile-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.profile-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.profile-tab.active {
+  border-color: var(--accent2);
+  color: var(--text);
+  background: var(--sel);
+}
+.profile-tab .pf-del {
+  color: var(--muted);
+  font-size: 0.75rem;
+  padding: 0 2px;
+}
+.profile-tab .pf-del:hover {
+  color: var(--danger2);
+}
+.profile-add {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+.group-output-title {
+  cursor: pointer;
+  user-select: none;
+}
+.group-output-panel.collapsed .go-body {
+  display: none;
+}
+.group-output-panel.collapsed .go-arrow {
+  transform: rotate(-90deg);
+}
+.go-arrow {
+  display: inline-block;
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+  margin-right: 6px;
+}
+.st-chips {
+  display: flex;
+  flex-wrap: wrap;
+}
+button.chip.st-go {
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.chip.on.open {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+/* eingeklappt: nur einzeln aufgeklappte Karten zeigen */
+.panel.collapsed:has(.bcard.xopen) .panel-body {
+  display: block;
+  height: auto;
+  opacity: 1;
+  visibility: visible;
+  margin: 8px 0 0;
+}
+.panel.collapsed .bcard:not(.xopen),
+.panel.collapsed .panel-body > :not(#buildings) {
+  display: none;
+}
+.bcard.flash {
+  animation: bflash 1.2s ease;
+}
+@keyframes bflash {
+  0%,
+  60% {
+    box-shadow:
+      0 0 0 3px var(--accent),
+      0 0 14px var(--glow);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  margin: 0 4px 3px 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--in);
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.chip.on {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.chip.zero {
+  opacity: 0.6;
+}
+.sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 10px 0 14px;
+}
+body > .appbar,
+.appbar.pl-bar {
+  margin: 0 -12px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+body > .appbar + * {
+  margin-top: 12px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.buildings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.bcard {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.bcard .name {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.bcard .lvl {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--accent2);
+}
+.bcard input[type="number"] {
+  width: 60px;
+  background: var(--in);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 5px;
+  text-align: center;
+  padding: 3px;
+  font-size: 0.95rem;
+  margin-top: 5px;
+}
+.pp-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.pp-toggle input {
+  width: auto !important;
+  margin: 0 !important;
+}
+.pp-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  margin-top: 5px;
+}
+.pp-cell span {
+  display: block;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+.bcard .pp-cell input[type="number"] {
+  width: 100%;
+  min-width: 0;
+  padding: 3px 1px;
+  font-size: 0.78rem;
+  margin-top: 1px;
+}
+.bcard select {
+  width: 100%;
+  margin-top: 5px;
+  background: var(--in);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 5px;
+  padding: 3px;
+  font-size: 0.72rem;
+}
+.btnrow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.group-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  justify-content: center;
+}
+.group-chip {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--in);
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.group-chip.active {
+  background: var(--accent2);
+  color: var(--on-accent);
+  border-color: var(--accent2);
+  font-weight: 600;
+}
+button {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  padding: 9px 16px;
+  border-radius: 7px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+button.secondary {
+  background: var(--accent2);
+}
+button.ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+button.small {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+}
+button:active {
+  transform: scale(0.97);
+}
+.out {
+  background: var(--in);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family:
+    Cascadia Code,
+    Courier New,
+    monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.out .b1 {
+  color: var(--accent2);
+  font-weight: 600;
+}
+.out .num {
+  color: var(--accent);
+}
+label.small {
+  font-size: 0.78rem;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 6px;
+}
+.copybtn {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  padding: 6px 12px;
+}
+.status {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 8px;
+  min-height: 16px;
+}
+.warn {
+  color: var(--danger);
+}
+.grouprow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.grouprow input[type="text"] {
+  background: var(--in);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  flex: 1;
+  min-width: 120px;
+}
+.grouprow button[data-action="up"],
+.grouprow button[data-action="down"] {
+  padding: 4px 8px;
+  min-width: 32px;
+  flex: 0 0 auto;
+}
+.grouprow .ptoggles {
+  display: flex;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.grouprow .ptoggle {
+  padding: 5px 6px;
+  font-size: 0.68rem;
+  min-width: 30px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 5px;
+}
+.grouprow .ptoggle.active {
+  background: var(--accent2);
+  color: var(--on-accent);
+  border-color: var(--accent2);
+  font-weight: 600;
+}
+.group-output-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.group-output-title {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--panel);
+  margin: -16px -16px 10px;
+  padding: 12px 16px;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+button.plus1 {
+  font-size: 1.1rem;
+  padding: 13px 22px;
+  min-width: 130px;
+  box-shadow: 0 0 0 2px var(--glow2);
+}
+body {
+  padding-bottom: calc(78px + env(safe-area-inset-bottom));
+}
+body.fe {
+  overflow: hidden;
+}
+body.pl > *:not(#plHost):not(#tabs):not(#feWrap):not(#lgSel):not(.lgpk):not(.thmb):not(.pkov):not(#cpToast) {
+  display: none !important;
+}
+#plHost {
+  display: none;
+}
+body.pl #plHost {
+  display: block;
+}
+#tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  display: flex;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 10px var(--shadow);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+#tabs button {
+  flex: 1;
+  min-width: 0;
+  padding: 0 2px;
+  text-align: center;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font:
+    600 12px system-ui,
+    sans-serif;
+  height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+}
+#tabs button span:first-child {
+  line-height: 1;
+}
+#tabs button .ic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  transition: background 0.2s ease;
+}
+#tabs button .ic svg {
+  width: 21px;
+  height: 21px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#tabs button.on .ic {
+  background: var(--glow);
+}
+#tabs button {
+  font-size: 11px;
+  white-space: nowrap;
+}
+#tabs button > span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#tabs button.on {
+  color: var(--accent);
+}
+#tabs button {
+  position: relative;
+}
+#tabs button::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 28%;
+  right: 28%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+}
+#tabs button.on::before {
+  transform: scaleX(1);
+}
+@keyframes tabBounce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-4px) scale(1.18);
+  }
+  100% {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #tabs button {
+    transition:
+      color 0.2s ease,
+      transform 0.12s ease;
+  }
+  #tabs button:active {
+    transform: scale(0.92);
+  }
+  #tabs button.on span:first-child {
+    animation: tabBounce 0.4s ease;
+  }
+}
+#feWrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: calc(58px + env(safe-area-inset-bottom));
+  z-index: 1000;
+  background: var(--bg);
+}
+#feWrap[hidden] {
+  display: none;
+}
+#feWrap iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+#feWrap iframe[hidden] {
+  display: none;
+}
+#lgSel {
+  position: fixed;
+  top: 8px;
+  right: 10px;
+  z-index: 30;
+  background: var(--in);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.85rem;
+}
+body.fe #lgSel,
+body.fe #lgSel + button.lgpk {
+  display: none;
+}
+
+#updBar {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: calc(66px + env(safe-area-inset-bottom));
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #2e7d32;
+  color: #fff;
+  border-radius: 10px;
+  font:
+    600 14px system-ui,
+    sans-serif;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+#updBar button {
+  background: #fff;
+  color: #1b5e20;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sn-x {
+  text-align: right;
+  color: var(--accent2);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.group-output-title.gt {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+}
+.group-output-title.gt .lvlline {
+  grid-column: 1 / -1;
+}
+.group-output-title.gt button.plus1 {
+  padding: 9px 18px;
+  min-width: 64px;
+  margin: 0;
+}
+#groupOutputs.noanim .group-output-panel,
+#groupOutputs.noanim .go-body {
+  animation: none;
+}
+.chip.grp {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.chip.grp.open {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.st-groups {
+  margin-top: 4px;
+}
+button.st-zhead {
+  display: block;
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  margin: 2px 0 4px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.st-gblock {
+  margin-bottom: 4px;
+}
+.st-gm {
+  margin: 4px 0 2px 14px;
+  padding-left: 8px;
+  border-left: 2px solid var(--accent);
+}
+button.chip.st-go,
+button.chip.st-grp {
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.group-output-title .lvlline {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.num.cpd::after {
+  content: " ✓";
+  color: #4caf50;
+  font-weight: 700;
+}
+.copybtn.dup {
+  background: #e65100;
+  border-color: #e65100;
+  color: #fff;
+}
+
+.xcost {
+  margin-top: 6px;
+  font-size: 0.76rem;
+}
+.xcost summary {
+  cursor: pointer;
+  color: var(--muted);
+  user-select: none;
+}
+.xcost .xrow {
+  margin-top: 4px;
+  line-height: 1.45;
+}
+.xcost .xrow > span:first-child {
+  display: block;
+  color: var(--muted);
+}
+.xcost .xn {
+  color: var(--accent);
+}
+
+/* Animationen (werden bei „Bewegung reduzieren“ des Systems abgeschaltet) */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  button,
+  select,
+  input,
+  .group-chip {
+    transition:
+      transform 0.12s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease,
+      opacity 0.2s ease;
+  }
+  button:active {
+    transform: scale(0.96);
+  }
+  input:focus,
+  select:focus {
+    box-shadow: 0 0 0 2px var(--glow);
+  }
+  .panel,
+  .group-output-panel,
+  .out-panel {
+    animation: fadeUp 0.3s ease both;
+  }
+  .group-chip.active {
+    animation: popIn 0.2s ease both;
+  }
+  .panel-body,
+  .go-body {
+    animation: fadeIn 0.25s ease both;
+  }
+}
+
+/* Ein-/Ausklappen animiert (Chrome: interpolate-size; sonst springt es wie vorher) */
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+  .panel-body,
+  .go-body {
+    overflow: hidden;
+    height: auto;
+    transition:
+      height 0.3s ease,
+      opacity 0.25s ease,
+      visibility 0.3s;
+  }
+  .panel.collapsed .panel-body,
+  .group-output-panel.collapsed .go-body {
+    display: block;
+    height: 0;
+    opacity: 0;
+    visibility: hidden;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  details::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 0.3s ease,
+      opacity 0.25s ease,
+      content-visibility 0.3s allow-discrete;
+  }
+  details[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
+/* Eingeklappte Gruppen-Ausgabe: nur als kompakte Pille (Name · Anzahl), Antippen klappt auf */
+#groupOutputs .group-output-panel.collapsed {
+  display: inline-block;
+  margin: 4px 8px 4px 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  vertical-align: top;
+}
+#groupOutputs .group-output-panel.collapsed .group-output-title.gt {
+  display: inline-flex;
+  position: static;
+  margin: 0;
+  box-shadow: none;
+  padding: 6px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  background: var(--panel);
+  cursor: pointer;
+}
+#groupOutputs .group-output-panel.collapsed .gt-main {
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+#groupOutputs .group-output-panel.collapsed .plus1,
+#groupOutputs .group-output-panel.collapsed .lvlline,
+#groupOutputs .group-output-panel.collapsed .go-body,
+#groupOutputs .group-output-panel.collapsed .panel-body {
+  display: none;
+}
+#groupOutputs {
+  margin-bottom: 12px;
+}
+</style><style>
+/* Gemeinsame Auswahl (js/pick.js). Erwartet die Variablen --in --t --b --m --c --a --a2 der Seite. */
+button.pk {
+  background: var(--in);
+  color: var(--t);
+  border: 1px solid var(--b);
+  border-radius: 8px;
+  padding: 8px 26px 8px 10px;
+  font:
+    15px Segoe UI,
+    system-ui,
+    sans-serif;
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+button.pk::after {
+  content: "▾";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--m);
+}
+.pkov {
+  position: fixed;
+  inset: 0;
+  background: #0009;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.pksh {
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow: auto;
+  margin: 0;
+  border-radius: 14px 14px 0 0;
+  padding-top: 0;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+}
+.pkh {
+  position: sticky;
+  top: 0;
+  background: var(--c);
+  padding: 12px 0 6px;
+  z-index: 1;
+}
+.pkr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 4px;
+  border-bottom: 1px solid var(--b);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pkr.on {
+  color: var(--a2);
+  font-weight: 600;
+}
+.pkr .ck {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--m);
+  border-radius: 50%;
+  position: relative;
+}
+.pkr.mu .ck {
+  border-radius: 5px;
+}
+.pkr.on .ck {
+  background: var(--a2);
+  border-color: var(--a2);
+}
+.pkr.on .ck::after {
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  line-height: 18px;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--on-accent);
+}
+.pkt {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.pkn {
+  color: var(--m);
+  padding: 10px 4px;
+}
+.pkh .pkt button.s {
+  background: var(--a);
+  color: var(--on-accent);
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 600;
+}
+.pksh h2 {
+  font-size: 1rem;
+  margin: 14px 0 4px;
+  color: var(--a2);
+}
+.pksh.card {
+  background: var(--c);
+  border: 1px solid var(--b);
+  color: var(--t);
+  padding-left: 12px;
+  padding-right: 12px;
+}
+/* Sprachwahl: auf jeder Seite gleiche Position und Größe (oben rechts) */
+button.lgpk {
+  position: fixed;
+  top: 8px;
+  right: 10px;
+  z-index: 30;
+  width: 58px;
+  height: 30px;
+  margin: 0;
+  padding: 0 18px 0 9px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 28px;
+  border-radius: 6px;
+}
+button.lgpk::after {
+  right: 7px;
+}
+.pkov {
+  z-index: 3000;
+}
+/* Zeitalter-Knopf: gleiche Höhe und Schrift wie die Sprachwahl */
+#era + button.pk {
+  width: 30vw !important;
+  max-width: 30vw !important;
+  min-width: 0 !important;
+  flex: none !important;
+  height: 30px;
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 28px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  border-radius: 6px;
+}
+/* Kurze Listen und Kalender: Dialog in der Mitte */
+.pkov.mid {
+  align-items: center;
+  padding: 16px;
+}
+.pkov.mid .pksh {
+  max-width: 340px;
+  max-height: 80vh;
+  border-radius: 14px;
+  padding-bottom: 12px;
+}
+.pkcal {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-top: 10px;
+  text-align: center;
+}
+.pkcal .wd {
+  color: var(--m);
+  font-size: 12px;
+  padding: 2px 0;
+}
+button.pkd {
+  background: var(--in);
+  color: var(--t);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 0;
+  font: inherit;
+}
+button.pkd.td {
+  border-color: var(--a2);
+}
+button.pkd.on {
+  background: var(--a2);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.pkb .pkt button.s {
+  background: var(--in);
+  color: var(--t);
+  border: 1px solid var(--b);
+  border-radius: 8px;
+  padding: 4px 14px;
+  font: inherit;
+  font-size: 1.2rem;
+}
+/* Einheitliche Schrift in allen Auswahl-Dialogen (wie Effizienz), unabhängig von der Seite */
+.pkov,
+.pkov input,
+.pkov button {
+  font-family:
+    Segoe UI,
+    system-ui,
+    sans-serif;
+  font-size: 15px;
+  line-height: normal;
+  letter-spacing: 0;
+}
+.pkov {
+  color: var(--t);
+  font-weight: 400;
+}
+.pkov .pkcal .wd {
+  font-size: 12px;
+}
+.pkov b {
+  font-weight: 700;
+}
+.pkov .pkr.on {
+  font-weight: 600;
+}
+/* Zeitwähler (pkTime) */
+.pkh6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+.pktm {
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  margin-top: 6px;
+}
+.pkb .pkh6 + .pkh6 {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--b);
+}
+.pkfine {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.pkb .pkfine button.s {
+  background: var(--in);
+  color: var(--t);
+  border: 1px solid var(--b);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font: inherit;
+}
+button.pk.tm {
+  width: auto;
+  min-width: 78px;
+  text-align: center;
+  padding-left: 10px;
+}
+
+@keyframes pkIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pkFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pkov {
+    animation: pkFade 0.2s ease both;
+  }
+  .pksh {
+    animation: pkIn 0.25s ease both;
+  }
+}
+</style>
 </head>
 <body>
 <select id="lgSel" title="Sprache"><option value="de">DE</option><option value="en">EN</option></select>
@@ -84,12 +1609,3030 @@
 <div class="status" id="backupStatus"></div>
 </div>
 </div>
-<script src="js/index-lg-data.js"></script><script src="js/index-lg-state.js"></script><script src="i18n/index.js"></script><script src="js/i18n-t.js"></script><script src="js/index-i18n.js"></script><script src="js/index-lg-calc.js"></script><script src="js/index-lg-render.js"></script><script src="js/index-lg-profiles.js"></script><script src="js/index-lg-boot.js"></script>
+<script>
+// LG-Rechner: Konstanten und Datenaufbau lgBuild() (Prestige-Update, Stand 05.11.2026), Abkürzungen
+// Teil 1/6 von index-lg.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in index.html.
+// LGN[Kürzel] = [höchste Stufe, Kostenschritt Stufe 1–10, 11–40, 41–70, 71–100, 101, ab 102] (Quelle: GB Update PUBLIC.xlsx, Blatt „Steps (New)“;
+// Gesamtkosten einer Stufe = Kosten der Vorstufe + Schritt). Höchste Stufe 300 = Gold-Gebäude, 200 = nur Kupfer.
+const LGN = {
+    Obsi: [300, 56, 27, 43, 106, 292, 1472],
+    Orakel: [200, 47, 33, 37, 112, 297, 911],
+    Tempel: [200, 56, 27, 43, 106, 292, 912],
+    Zeus: [300, 44, 21, 34, 83, 229, 1486],
+    Babel: [200, 44, 21, 34, 83, 229, 950],
+    Kolosseum: [300, 48, 22, 38, 87, 245, 1482],
+    Leuchtturm: [200, 48, 22, 38, 87, 245, 971],
+    AD: [300, 52, 25, 39, 99, 271, 1477],
+    Galata: [200, 47, 33, 37, 112, 297, 984],
+    Hagia: [200, 52, 25, 39, 99, 271, 990],
+    Notre: [200, 56, 27, 43, 106, 292, 1010],
+    MD: [300, 56, 27, 43, 106, 292, 1472],
+    CDM: [300, 60, 29, 47, 113, 314, 1468],
+    Basilius: [200, 60, 29, 47, 113, 314, 1030],
+    Deal: [300, 64, 31, 48, 121, 332, 1464],
+    Dresdner: [200, 64, 31, 48, 121, 332, 1050],
+    Kapitol: [200, 68, 33, 52, 129, 355, 1070],
+    RAH: [300, 68, 33, 52, 129, 355, 1459],
+    CF: [300, 72, 34, 56, 133, 371, 1456],
+    Alca: [300, 72, 34, 56, 133, 371, 1456],
+    Atomium: [200, 76, 36, 59, 142, 394, 1110],
+    Needle: [200, 76, 36, 59, 142, 394, 1110],
+    Cape: [200, 76, 36, 59, 142, 394, 1134],
+    Habitat: [200, 76, 36, 59, 142, 394, 1134],
+    Inno: [200, 76, 36, 59, 142, 394, 1159],
+    Lotus: [300, 76, 36, 59, 142, 394, 1451],
+    Friedensturm: [200, 80, 39, 61, 151, 417, 1178],
+    Voyager: [200, 80, 39, 61, 151, 417, 1178],
+    Arche: [300, 84, 40, 65, 156, 434, 1443],
+    Regenwald: [200, 84, 40, 65, 156, 434, 1199],
+    AO: [300, 96, 46, 74, 179, 497, 1429],
+    Gaea: [200, 96, 46, 74, 179, 497, 1210],
+    Tresor: [300, 96, 46, 74, 179, 497, 1429],
+    Atlantis: [200, 100, 48, 77, 188, 520, 1230],
+    BG: [300, 100, 48, 77, 188, 520, 1424],
+    Kraken: [300, 100, 48, 77, 188, 520, 1424],
+    Burg: [300, 104, 50, 81, 195, 541, 1420],
+    TA: [300, 104, 50, 81, 195, 541, 1420],
+    Gazer: [200, 108, 52, 83, 202, 560, 1270],
+    Virgo: [300, 108, 52, 83, 202, 560, 1416],
+    WF: [300, 112, 54, 86, 211, 583, 1411],
+    Insel: [200, 116, 56, 90, 218, 604, 1309],
+    "K.I.": [200, 120, 58, 92, 225, 623, 1330],
+    Centaurus: [200, 282, 134, 216, 527, 1457, 1178],
+    Hydra: [200, 345, 164, 265, 644, 1782, 1109],
+    Pegasus: [200, 218, 104, 168, 408, 1129, 1247],
+    Katalysator: [200, 1000, 475, 771, 1864, 5165, 420],
+    Kriegsschiff: [200, 1241, 590, 957, 2316, 6415, 156],
+    Siphon: [500, 4150, 4150, 4150, 4150, 6225, 4150],
+  },
+  // Beitragsbelohnung = Stufenkosten × Bandanteil (Stufenbereich) × Platzanteil; Kupfer 5 Plätze, Gold ab Stufe 101 7 Plätze; rows[L] = [Kosten, P1..P7] (Faktor 1)
+  LG_BANDS = [
+    [9, 0.25],
+    [39, 0.3],
+    [69, 0.4],
+    [100, 0.25],
+    [200, 0.15],
+    [300, 0.1],
+    [400, 0.07],
+    [500, 0.05],
+  ],
+  LG_COPPER = [0.5825, 0.2913, 0.0971, 0.0243, 0.0049, 0, 0],
+  LG_GOLD = [0.582, 0.291, 0.097, 0.0242, 0.0048, 0.0008, 0.0001];
+function lgBuild() {
+  const D = {};
+  for (const ab in LGN) {
+    const [m, ...st] = LGN[ab],
+      rows = { 0: [0, 0, 0, 0, 0, 0, 0, 0] };
+    let tot = 0,
+      b = 0;
+    for (let L = 1; L <= m; L++) {
+      tot += st[L <= 10 ? 0 : L <= 40 ? 1 : L <= 70 ? 2 : L <= 100 ? 3 : L === 101 ? 4 : 5];
+      while (L > LG_BANDS[b][0]) b++;
+      const pool = tot * LG_BANDS[b][1],
+        sh = m > 200 && L > 100 ? LG_GOLD : LG_COPPER;
+      // Basiswert je Platz auf ganze FP gerundet (wie im Spiel); der Förderfaktor wird erst danach angewendet
+      rows[L] = [tot, ...sh.map((x) => Math.round(pool * x))];
+    }
+    D[ab] = { faktor: 1.84, faktorGold: m > 200 ? 1.2 : null, max: m, rows };
+  }
+  return D;
+}
+const DATA = lgBuild();
+// Zusatzkosten je Stufe (Quelle: GB Update PUBLIC.xlsx, je Gebäude-Blatt; Stufe 1..max, Index = Stufe−1).
+// Reihen: cs/gs = Kupfer-/Gold-BP-Sets, co = Münzen und Vorräte (gleicher Wert), c = nur Münzen, su = nur Vorräte, me = Medaillen, go = Güter (je Sorte).
+// LGX_M[Kürzel] verweist je Art auf eine Reihe in LGX_S (gleiche Reihen werden geteilt).
+const LGX_S = {
+    cs0: [
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    ],
+    gs0: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    ],
+    co0: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2253489, 2259124, 2264759, 2270394,
+      2276029, 2281664, 2287299, 2292934, 2298569, 2304204, 2309839, 2315474, 2321109, 2326744, 2332379, 2338014,
+      2343649, 2349284, 2354919, 2360554, 2366189, 2371824, 2377459, 2383094, 2388729, 2394364, 2399999, 2405634,
+      2411269, 2416904, 2422539, 2428174, 2433809, 2439444, 2445079, 2450714, 2456349, 2461984, 2467619, 2473254,
+      2478889, 2484524, 2490159, 2495794, 2501429, 2507064, 2512699, 2518334, 2523969, 2529604, 2535239, 2540874,
+      2546509, 2552144, 2557779, 2563414, 2569049, 2574684, 2580319, 2585954, 2591589, 2597224, 2602859, 2608494,
+      2614129, 2619764, 2625399, 2631034, 2636669, 2642304, 2647939, 2653574, 2659209, 2664844, 2670479, 2676114,
+      2681749, 2687384, 2693019, 2698654, 2704289, 2709924, 2715559, 2721194, 2726829, 2732464, 2738099, 2743734,
+      2749369, 2755004, 2760639, 2766274, 2771909, 2777544, 2783179, 2788814, 2794449, 2800084, 2805719, 2811354,
+      2816969, 2822604, 2828239, 2833874, 2839509, 2845144, 2850779, 2856414, 2862049, 2867684, 2873319, 2878954,
+      2884589, 2890224, 2895859, 2901494, 2907129, 2912764, 2918399, 2924034, 2929669, 2935304, 2940939, 2946574,
+      2952209, 2957844, 2963479, 2969114, 2974749, 2980384, 2986019, 2991654, 2997289, 3002924, 3008559, 3014194,
+      3019829, 3025464, 3031099, 3036734, 3042369, 3048004, 3053639, 3059274, 3064909, 3070544, 3076179, 3081814,
+      3087449, 3093084, 3098719, 3104354, 3109989, 3115624, 3121259, 3126894, 3132529, 3138164, 3143799, 3149434,
+      3155069, 3160704, 3166339, 3171974, 3177609, 3183244, 3188879, 3194514, 3200149, 3205784, 3211419, 3217054,
+      3222689, 3228324, 3233959, 3239594, 3245229, 3250864, 3256499, 3262134, 3267769, 3273404, 3279039, 3284674,
+      3290309, 3295944, 3301579, 3307214, 3312849, 3318484, 3324119, 3329754, 3335389, 3341024, 3346659, 3352294,
+      3357929, 3363564, 3369199, 3374834,
+    ],
+    me0: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1126744, 1129561, 1132378, 1135195,
+      1138012, 1140829, 1143646, 1146463, 1149280, 1152097, 1154914, 1157731, 1160548, 1163365, 1166182, 1168999,
+      1171816, 1174633, 1177450, 1180267, 1183084, 1185901, 1188718, 1191535, 1194352, 1197169, 1199986, 1202803,
+      1205620, 1208437, 1211254, 1214071, 1216888, 1219705, 1222522, 1225339, 1228156, 1230973, 1233790, 1236607,
+      1239424, 1242241, 1245058, 1247875, 1250692, 1253509, 1256326, 1259143, 1261960, 1264777, 1267594, 1270411,
+      1273228, 1276045, 1278862, 1281679, 1284496, 1287313, 1290130, 1292947, 1295764, 1298581, 1301398, 1304215,
+      1307032, 1309849, 1312666, 1315483, 1318300, 1321117, 1323934, 1326751, 1329568, 1332385, 1335202, 1338019,
+      1340836, 1343653, 1346470, 1349287, 1352104, 1354921, 1357738, 1360555, 1363372, 1366189, 1369006, 1371823,
+      1374640, 1377457, 1380274, 1383091, 1385908, 1388725, 1391542, 1394359, 1397176, 1399993, 1402810, 1405627,
+      1408484, 1411301, 1414118, 1416935, 1419752, 1422569, 1425386, 1428203, 1431020, 1433837, 1436654, 1439471,
+      1442288, 1445105, 1447922, 1450739, 1453556, 1456373, 1459190, 1462007, 1464824, 1467641, 1470458, 1473275,
+      1476092, 1478909, 1481726, 1484543, 1487360, 1490177, 1492994, 1495811, 1498628, 1501445, 1504262, 1507079,
+      1509896, 1512713, 1515530, 1518347, 1521164, 1523981, 1526798, 1529615, 1532432, 1535249, 1538066, 1540883,
+      1543700, 1546517, 1549334, 1552151, 1554968, 1557785, 1560602, 1563419, 1566236, 1569053, 1571870, 1574687,
+      1577504, 1580321, 1583138, 1585955, 1588772, 1591589, 1594406, 1597223, 1600040, 1602857, 1605674, 1608491,
+      1611308, 1614125, 1616942, 1619759, 1622576, 1625393, 1628210, 1631027, 1633844, 1636661, 1639478, 1642295,
+      1645112, 1647929, 1650746, 1653563, 1656380, 1659197, 1662014, 1664831, 1667648, 1670465, 1673282, 1676099,
+      1678916, 1681733, 1684550, 1687367,
+    ],
+    go0: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 92, 138, 184, 230, 276, 322, 368, 414,
+      460, 506, 552, 598, 644, 690, 736, 782, 828, 874, 920, 966, 1012, 1058, 1104, 1150, 1196, 1242, 1288, 1334, 1380,
+      1426, 1472, 1518, 1564, 1610, 1656, 1702, 1748, 1794, 1840, 1886, 1932, 1978, 2024, 2070, 2116, 2162, 2208, 2254,
+      2300, 2346, 2392, 2438, 2484, 2530, 2576, 2622, 2668, 2714, 2760, 2806, 2852, 2898, 2944, 2990, 3036, 3082, 3128,
+      3174, 3220, 3266, 3312, 3358, 3404, 3450, 3496, 3542, 3588, 3634, 3680, 3726, 3772, 3818, 3864, 3910, 3956, 4002,
+      4048, 4094, 4140, 4186, 4232, 4278, 4324, 4370, 4416, 4462, 4508, 4554, 4600, 4646, 4652, 4698, 4744, 4790, 4836,
+      4882, 4928, 4974, 5020, 5066, 5112, 5158, 5204, 5250, 5296, 5342, 5388, 5434, 5480, 5526, 5572, 5618, 5664, 5710,
+      5756, 5802, 5848, 5894, 5940, 5986, 6032, 6078, 6124, 6170, 6216, 6262, 6308, 6354, 6400, 6446, 6492, 6538, 6584,
+      6630, 6676, 6722, 6768, 6814, 6860, 6906, 6952, 6998, 7044, 7090, 7136, 7182, 7228, 7274, 7320, 7366, 7412, 7458,
+      7504, 7550, 7596, 7642, 7688, 7734, 7780, 7826, 7872, 7918, 7964, 8010, 8056, 8102, 8148, 8194, 8240, 8286, 8332,
+      8378, 8424, 8470, 8516, 8562, 8608, 8654, 8700, 8746, 8792, 8838, 8884, 8930, 8976, 9022, 9068, 9114, 9160, 9206,
+    ],
+    cs1: [
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    ],
+    cs2: [
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    ],
+    cs3: [
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    cs4: [
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    ],
+    co1: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73299, 97732, 122165, 146598, 171031, 195464, 219897, 244330, 268763, 293196,
+      317629, 342062, 366495, 390928, 415361, 439794, 464227, 488660, 513093, 537526, 561959, 586392, 610825, 635258,
+      659691, 684124, 708557, 732990, 757423, 781862, 806295, 830728, 855161, 879594, 904027, 928460, 952893, 977326,
+      1001759, 1026192, 1050625, 1075058, 1099491, 1123924, 1148357, 1172790, 1197223, 1221656, 1246089, 1270522,
+      1294955, 1319388, 1343821, 1368254, 1392687, 1417120, 1441553, 1465986, 1490419, 1514858, 1539291, 1563724,
+      1588157, 1612590, 1637023, 1661456, 1685889, 1710322, 1734755, 1759188, 1783621, 1808054, 1832487, 1856920,
+      1881353, 1905786, 1930219, 1954652, 1979085, 2003518, 2027951, 2052384, 2076817, 2101250, 2125683, 2150116,
+      2174549, 2198982, 2223415, 2247848, 2253489, 2259124, 2264759, 2270394, 2276029, 2281664, 2287299, 2292934,
+      2298569, 2304204, 2309839, 2315474, 2321109, 2326744, 2332379, 2338014, 2343649, 2349284, 2354919, 2360554,
+      2366189, 2371824, 2377459, 2383094, 2388729, 2394364, 2399999, 2405634, 2411269, 2416904, 2422539, 2428174,
+      2433809, 2439444, 2445079, 2450714, 2456349, 2461984, 2467619, 2473254, 2478889, 2484524, 2490159, 2495794,
+      2501429, 2507064, 2512699, 2518334, 2523969, 2529604, 2535239, 2540874, 2546509, 2552144, 2557779, 2563414,
+      2569049, 2574684, 2580319, 2585954, 2591589, 2597224, 2602859, 2608494, 2614129, 2619764, 2625399, 2631034,
+      2636669, 2642304, 2647939, 2653574, 2659209, 2664844, 2670479, 2676114, 2681749, 2687384, 2693019, 2698654,
+      2704289, 2709924, 2715559, 2721194, 2726829, 2732464, 2738099, 2743734, 2749369, 2755004, 2760639, 2766274,
+      2771909, 2777544, 2783179, 2788814, 2794449, 2800084, 2805719, 2811354, 2816969, 2822604, 2828239, 2833874,
+      2839509, 2845144, 2850779, 2856414, 2862049, 2867684, 2873319, 2878954, 2884589, 2890224, 2895859, 2901494,
+      2907129, 2912764, 2918399, 2924034, 2929669, 2935304, 2940939, 2946574, 2952209, 2957844, 2963479, 2969114,
+      2974749, 2980384, 2986019, 2991654, 2997289, 3002924, 3008559, 3014194, 3019829, 3025464, 3031099, 3036734,
+      3042369, 3048004, 3053639, 3059274, 3064909, 3070544, 3076179, 3081814, 3087449, 3093084, 3098719, 3104354,
+      3109989, 3115624, 3121259, 3126894, 3132529, 3138164, 3143799, 3149434, 3155069, 3160704, 3166339, 3171974,
+      3177609, 3183244, 3188879, 3194514, 3200149, 3205784, 3211419, 3217054, 3222689, 3228324, 3233959, 3239594,
+      3245229, 3250864, 3256499, 3262134, 3267769, 3273404, 3279039, 3284674, 3290309, 3295944, 3301579, 3307214,
+      3312849, 3318484, 3324119, 3329754, 3335389, 3341024, 3346659, 3352294, 3357929, 3363564, 3369199, 3374834,
+    ],
+    me1: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36651, 48868, 61085, 73302, 85519, 97736, 109953, 122170, 134387, 146604, 158821,
+      171038, 183255, 195472, 207689, 219906, 232123, 244340, 256557, 268774, 280991, 293208, 305425, 317642, 329859,
+      342076, 354293, 366510, 378727, 390932, 403149, 415366, 427583, 439800, 452017, 464234, 476451, 488668, 500885,
+      513102, 525319, 537536, 549753, 561970, 574187, 586404, 598621, 610838, 623055, 635272, 647489, 659706, 671923,
+      684140, 696357, 708574, 720791, 733008, 745225, 757430, 769647, 781864, 794081, 806298, 818515, 830732, 842949,
+      855166, 867383, 879600, 891817, 904034, 916251, 928468, 940685, 952902, 965119, 977336, 989553, 1001770, 1013987,
+      1026204, 1038421, 1050638, 1062855, 1075072, 1087289, 1099506, 1111723, 1123940, 1126744, 1129561, 1132378,
+      1135195, 1138012, 1140829, 1143646, 1146463, 1149280, 1152097, 1154914, 1157731, 1160548, 1163365, 1166182,
+      1168999, 1171816, 1174633, 1177450, 1180267, 1183084, 1185901, 1188718, 1191535, 1194352, 1197169, 1199986,
+      1202803, 1205620, 1208437, 1211254, 1214071, 1216888, 1219705, 1222522, 1225339, 1228156, 1230973, 1233790,
+      1236607, 1239424, 1242241, 1245058, 1247875, 1250692, 1253509, 1256326, 1259143, 1261960, 1264777, 1267594,
+      1270411, 1273228, 1276045, 1278862, 1281679, 1284496, 1287313, 1290130, 1292947, 1295764, 1298581, 1301398,
+      1304215, 1307032, 1309849, 1312666, 1315483, 1318300, 1321117, 1323934, 1326751, 1329568, 1332385, 1335202,
+      1338019, 1340836, 1343653, 1346470, 1349287, 1352104, 1354921, 1357738, 1360555, 1363372, 1366189, 1369006,
+      1371823, 1374640, 1377457, 1380274, 1383091, 1385908, 1388725, 1391542, 1394359, 1397176, 1399993, 1402810,
+      1405627, 1408484, 1411301, 1414118, 1416935, 1419752, 1422569, 1425386, 1428203, 1431020, 1433837, 1436654,
+      1439471, 1442288, 1445105, 1447922, 1450739, 1453556, 1456373, 1459190, 1462007, 1464824, 1467641, 1470458,
+      1473275, 1476092, 1478909, 1481726, 1484543, 1487360, 1490177, 1492994, 1495811, 1498628, 1501445, 1504262,
+      1507079, 1509896, 1512713, 1515530, 1518347, 1521164, 1523981, 1526798, 1529615, 1532432, 1535249, 1538066,
+      1540883, 1543700, 1546517, 1549334, 1552151, 1554968, 1557785, 1560602, 1563419, 1566236, 1569053, 1571870,
+      1574687, 1577504, 1580321, 1583138, 1585955, 1588772, 1591589, 1594406, 1597223, 1600040, 1602857, 1605674,
+      1608491, 1611308, 1614125, 1616942, 1619759, 1622576, 1625393, 1628210, 1631027, 1633844, 1636661, 1639478,
+      1642295, 1645112, 1647929, 1650746, 1653563, 1656380, 1659197, 1662014, 1664831, 1667648, 1670465, 1673282,
+      1676099, 1678916, 1681733, 1684550, 1687367,
+    ],
+    c0: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4000000, 8000000, 12000000, 16000000, 20000000, 24000000, 28000000, 32000000,
+      36000000, 40000000, 44000000, 48000000, 52000000, 56000000, 60000000, 64000000, 68000000, 72000000, 76000000,
+      80000000, 84000000, 88000000, 92000000, 96000000, 100000000, 104000000, 108000000, 112000000, 116000000,
+      120000000, 124000000, 128000000, 132000000, 136000000, 140000000, 144000000, 148000000, 152000000, 156000000,
+      160000000, 164000000, 168000000, 172000000, 176000000, 180000000, 184000000, 188000000, 192000000, 196000000,
+      200000000, 204000000, 208000000, 212000000, 216000000, 220000000, 224000000, 228000000, 232000000, 236000000,
+      240000000, 244000000, 248000000, 252000000, 256000000, 260000000, 264000000, 268000000, 272000000, 276000000,
+      280000000, 284000000, 288000000, 292000000, 296000000, 300000000, 304000000, 308000000, 312000000, 316000000,
+      320000000, 324000000, 328000000, 332000000, 336000000, 340000000, 344000000, 348000000, 352000000, 356000000,
+      360000000, 364000000, 368000000, 372000000, 376000000, 380000000, 384000000, 388000000, 392000000, 396000000,
+      400000000, 404000000, 408000000, 412000000, 416000000, 420000000, 424000000, 428000000, 432000000, 436000000,
+      440000000, 444000000, 448000000, 452000000, 456000000, 460000000, 464000000, 468000000, 472000000, 476000000,
+      480000000, 484000000, 488000000, 492000000, 496000000, 500000000, 504000000, 508000000, 512000000, 516000000,
+      520000000, 524000000, 528000000, 532000000, 536000000, 540000000, 544000000, 548000000, 552000000, 556000000,
+      560000000, 564000000, 568000000, 572000000, 576000000, 580000000, 584000000, 588000000, 592000000, 596000000,
+      600000000, 604000000, 608000000, 612000000, 616000000, 620000000, 624000000, 628000000, 632000000, 636000000,
+      640000000, 644000000, 648000000, 652000000, 656000000, 660000000, 664000000, 668000000, 672000000, 676000000,
+      680000000, 684000000, 688000000, 692000000, 696000000, 700000000, 704000000, 708000000, 712000000, 716000000,
+      720000000, 724000000, 728000000, 732000000, 736000000, 740000000, 744000000, 748000000, 752000000, 756000000,
+      760000000,
+    ],
+    go1: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 160, 240, 320, 400, 480, 560, 640, 720, 800, 880, 960, 1040, 1120, 1200, 1280,
+      1360, 1440, 1520, 1600, 1680, 1760, 1840, 1920, 2000, 2080, 2160, 2240, 2320, 2400, 2480, 2560, 2640, 2720, 2800,
+      2880, 2960, 3040, 3120, 3200, 3280, 3360, 3440, 3520, 3600, 3680, 3760, 3840, 3920, 4000, 4080, 4160, 4240, 4320,
+      4400, 4480, 4560, 4640, 4720, 4800, 4880, 4960, 5040, 5120, 5200, 5280, 5360, 5440, 5520, 5600, 5680, 5760, 5840,
+      5920, 6000, 6080, 6160, 6240, 6320, 6400, 6480, 6560, 6640, 6720, 6800, 6880, 6960, 7040, 7120, 7200, 7280, 7360,
+      7440, 7520, 7600, 7680, 7760, 7840, 7920, 8000, 8080, 8160, 8240, 8320, 8400, 8480, 8560, 8640, 8720, 8800, 8880,
+      8960, 9040, 9120, 9200, 9280, 9360, 9440, 9520, 9600, 9680, 9760, 9840, 9920, 10000, 10080, 10160, 10240, 10320,
+      10400, 10480, 10560, 10640, 10720, 10800, 10880, 10960, 11040, 11120, 11200, 11280, 11360, 11440, 11520, 11600,
+      11680, 11760, 11840, 11920, 12000, 12080, 12160, 12240, 12320, 12400, 12480, 12560, 12640, 12720, 12800, 12880,
+      12960, 13040, 13120, 13200, 13280, 13360, 13440, 13520, 13600, 13680, 13760, 13840, 13920, 14000, 14080, 14160,
+      14240, 14320, 14400, 14480, 14560, 14640, 14720, 14800, 14880, 14960, 15040, 15120, 15200,
+    ],
+    c1: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5000000, 10000000, 15000000, 20000000, 25000000, 30000000, 35000000, 40000000,
+      45000000, 50000000, 55000000, 60000000, 65000000, 70000000, 75000000, 80000000, 85000000, 90000000, 95000000,
+      100000000, 105000000, 110000000, 115000000, 120000000, 125000000, 130000000, 135000000, 140000000, 145000000,
+      150000000, 155000000, 160000000, 165000000, 170000000, 175000000, 180000000, 185000000, 190000000, 195000000,
+      200000000, 205000000, 210000000, 215000000, 220000000, 225000000, 230000000, 235000000, 240000000, 245000000,
+      250000000, 255000000, 260000000, 265000000, 270000000, 275000000, 280000000, 285000000, 290000000, 295000000,
+      300000000, 305000000, 310000000, 315000000, 320000000, 325000000, 330000000, 335000000, 340000000, 345000000,
+      350000000, 355000000, 360000000, 365000000, 370000000, 375000000, 380000000, 385000000, 390000000, 395000000,
+      400000000, 405000000, 410000000, 415000000, 420000000, 425000000, 430000000, 435000000, 440000000, 445000000,
+      450000000, 455000000, 460000000, 465000000, 470000000, 475000000, 480000000, 485000000, 490000000, 495000000,
+      500000000, 505000000, 510000000, 515000000, 520000000, 525000000, 530000000, 535000000, 540000000, 545000000,
+      550000000, 555000000, 560000000, 565000000, 570000000, 575000000, 580000000, 585000000, 590000000, 595000000,
+      600000000, 605000000, 610000000, 615000000, 620000000, 625000000, 630000000, 635000000, 640000000, 645000000,
+      650000000, 655000000, 660000000, 665000000, 670000000, 675000000, 680000000, 685000000, 690000000, 695000000,
+      700000000, 705000000, 710000000, 715000000, 720000000, 725000000, 730000000, 735000000, 740000000, 745000000,
+      750000000, 755000000, 760000000, 765000000, 770000000, 775000000, 780000000, 785000000, 790000000, 795000000,
+      800000000, 805000000, 810000000, 815000000, 820000000, 825000000, 830000000, 835000000, 840000000, 845000000,
+      850000000, 855000000, 860000000, 865000000, 870000000, 875000000, 880000000, 885000000, 890000000, 895000000,
+      900000000, 905000000, 910000000, 915000000, 920000000, 925000000, 930000000, 935000000, 940000000, 945000000,
+      950000000,
+    ],
+    go2: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500,
+      1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400,
+      3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200, 4300, 4400, 4500, 4600, 4700, 4800, 4900, 5000, 5100, 5200, 5300,
+      5400, 5500, 5600, 5700, 5800, 5900, 6000, 6100, 6200, 6300, 6400, 6500, 6600, 6700, 6800, 6900, 7000, 7100, 7200,
+      7300, 7400, 7500, 7600, 7700, 7800, 7900, 8000, 8100, 8200, 8300, 8400, 8500, 8600, 8700, 8800, 8900, 9000, 9100,
+      9200, 9300, 9400, 9500, 9600, 9700, 9800, 9900, 10000, 10100, 10200, 10300, 10400, 10500, 10600, 10700, 10800,
+      10900, 11000, 11100, 11200, 11300, 11400, 11500, 11600, 11700, 11800, 11900, 12000, 12100, 12200, 12300, 12400,
+      12500, 12600, 12700, 12800, 12900, 13000, 13100, 13200, 13300, 13400, 13500, 13600, 13700, 13800, 13900, 14000,
+      14100, 14200, 14300, 14400, 14500, 14600, 14700, 14800, 14900, 15000, 15100, 15200, 15300, 15400, 15500, 15600,
+      15700, 15800, 15900, 16000, 16100, 16200, 16300, 16400, 16500, 16600, 16700, 16800, 16900, 17000, 17100, 17200,
+      17300, 17400, 17500, 17600, 17700, 17800, 17900, 18000, 18100, 18200, 18300, 18400, 18500, 18600, 18700, 18800,
+      18900, 19000,
+    ],
+    c2: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3000000, 6000000, 9000000, 12000000, 15000000, 18000000, 21000000, 24000000,
+      27000000, 30000000, 33000000, 36000000, 39000000, 42000000, 45000000, 48000000, 51000000, 54000000, 57000000,
+      60000000, 63000000, 66000000, 69000000, 72000000, 75000000, 78000000, 81000000, 84000000, 87000000, 90000000,
+      93000000, 96000000, 99000000, 102000000, 105000000, 108000000, 111000000, 114000000, 117000000, 120000000,
+      123000000, 126000000, 129000000, 132000000, 135000000, 138000000, 141000000, 144000000, 147000000, 150000000,
+      153000000, 156000000, 159000000, 162000000, 165000000, 168000000, 171000000, 174000000, 177000000, 180000000,
+      183000000, 186000000, 189000000, 192000000, 195000000, 198000000, 201000000, 204000000, 207000000, 210000000,
+      213000000, 216000000, 219000000, 222000000, 225000000, 228000000, 231000000, 234000000, 237000000, 240000000,
+      243000000, 246000000, 249000000, 252000000, 255000000, 258000000, 261000000, 264000000, 267000000, 270000000,
+      273000000, 276000000, 279000000, 282000000, 285000000, 288000000, 291000000, 294000000, 297000000, 300000000,
+      303000000, 306000000, 309000000, 312000000, 315000000, 318000000, 321000000, 324000000, 327000000, 330000000,
+      333000000, 336000000, 339000000, 342000000, 345000000, 348000000, 351000000, 354000000, 357000000, 360000000,
+      363000000, 366000000, 369000000, 372000000, 375000000, 378000000, 381000000, 384000000, 387000000, 390000000,
+      393000000, 396000000, 399000000, 402000000, 405000000, 408000000, 411000000, 414000000, 417000000, 420000000,
+      423000000, 426000000, 429000000, 432000000, 435000000, 438000000, 441000000, 444000000, 447000000, 450000000,
+      453000000, 456000000, 459000000, 462000000, 465000000, 468000000, 471000000, 474000000, 477000000, 480000000,
+      483000000, 486000000, 489000000, 492000000, 495000000, 498000000, 501000000, 504000000, 507000000, 510000000,
+      513000000, 516000000, 519000000, 522000000, 525000000, 528000000, 531000000, 534000000, 537000000, 540000000,
+      543000000, 546000000, 549000000, 552000000, 555000000, 558000000, 561000000, 564000000, 567000000, 570000000,
+    ],
+    go3: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 780, 840, 900, 960, 1020,
+      1080, 1140, 1200, 1260, 1320, 1380, 1440, 1500, 1560, 1620, 1680, 1740, 1800, 1860, 1920, 1980, 2040, 2100, 2160,
+      2220, 2280, 2340, 2400, 2460, 2520, 2580, 2640, 2700, 2760, 2820, 2880, 2940, 3000, 3060, 3120, 3180, 3240, 3300,
+      3360, 3420, 3480, 3540, 3600, 3660, 3720, 3780, 3840, 3900, 3960, 4020, 4080, 4140, 4200, 4260, 4320, 4380, 4440,
+      4500, 4560, 4620, 4680, 4740, 4800, 4860, 4920, 4980, 5040, 5100, 5160, 5220, 5280, 5340, 5400, 5460, 5520, 5580,
+      5640, 5700, 5760, 5820, 5880, 5940, 6000, 6060, 6120, 6180, 6240, 6300, 6360, 6420, 6480, 6540, 6600, 6660, 6720,
+      6780, 6840, 6900, 6960, 7020, 7080, 7140, 7200, 7260, 7320, 7380, 7440, 7500, 7560, 7620, 7680, 7740, 7800, 7860,
+      7920, 7980, 8040, 8100, 8160, 8220, 8280, 8340, 8400, 8460, 8520, 8580, 8640, 8700, 8760, 8820, 8880, 8940, 9000,
+      9060, 9120, 9180, 9240, 9300, 9360, 9420, 9480, 9540, 9600, 9660, 9720, 9780, 9840, 9900, 9960, 10020, 10080,
+      10140, 10200, 10260, 10320, 10380, 10440, 10500, 10560, 10620, 10680, 10740, 10800, 10860, 10920, 10980, 11040,
+      11100, 11160, 11220, 11280, 11340, 11400,
+    ],
+    go4: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150, 300, 450, 600, 750, 900, 1050, 1200, 1350, 1500, 1650, 1800, 1950, 2100, 2250,
+      2400, 2550, 2700, 2850, 3000, 3150, 3300, 3450, 3600, 3750, 3900, 4050, 4200, 4350, 4500, 4650, 4800, 4950, 5100,
+      5250, 5400, 5550, 5700, 5850, 6000, 6150, 6300, 6450, 6600, 6750, 6900, 7050, 7200, 7350, 7500, 7650, 7800, 7950,
+      8100, 8250, 8400, 8550, 8700, 8850, 9000, 9150, 9300, 9450, 9600, 9750, 9900, 10050, 10200, 10350, 10500, 10650,
+      10800, 10950, 11100, 11250, 11400, 11550, 11700, 11850, 12000, 12150, 12300, 12450, 12600, 12750, 12900, 13050,
+      13200, 13350, 13500, 13650, 13800, 13950, 14100, 14250, 14400, 14550, 14700, 14850, 15000, 15150, 15300, 15450,
+      15600, 15750, 15900, 16050, 16200, 16350, 16500, 16650, 16800, 16950, 17100, 17250, 17400, 17550, 17700, 17850,
+      18000, 18150, 18300, 18450, 18600, 18750, 18900, 19050, 19200, 19350, 19500, 19650, 19800, 19950, 20100, 20250,
+      20400, 20550, 20700, 20850, 21000, 21150, 21300, 21450, 21600, 21750, 21900, 22050, 22200, 22350, 22500, 22650,
+      22800, 22950, 23100, 23250, 23400, 23550, 23700, 23850, 24000, 24150, 24300, 24450, 24600, 24750, 24900, 25050,
+      25200, 25350, 25500, 25650, 25800, 25950, 26100, 26250, 26400, 26550, 26700, 26850, 27000, 27150, 27300, 27450,
+      27600, 27750, 27900, 28050, 28200, 28350, 28500,
+    ],
+    su0: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4000000, 8000000, 12000000, 16000000, 20000000, 24000000, 28000000, 32000000,
+      36000000, 40000000, 44000000, 48000000, 52000000, 56000000, 60000000, 64000000, 68000000, 72000000, 76000000,
+      80000000, 84000000, 88000000, 92000000, 96000000, 100000000, 104000000, 108000000, 112000000, 116000000,
+      120000000, 124000000, 128000000, 132000000, 136000000, 140000000, 144000000, 148000000, 152000000, 156000000,
+      160000000, 164000000, 168000000, 172000000, 176000000, 180000000, 184000000, 188000000, 192000000, 196000000,
+      200000000, 204000000, 208000000, 212000000, 216000000, 220000000, 224000000, 228000000, 232000000, 236000000,
+      240000000, 244000000, 248000000, 252000000, 256000000, 260000000, 264000000, 268000000, 272000000, 276000000,
+      280000000, 284000000, 288000000, 292000000, 296000000, 300000000, 304000000, 308000000, 312000000, 316000000,
+      320000000, 324000000, 328000000, 332000000, 336000000, 340000000, 344000000, 348000000, 352000000, 356000000,
+      360000000, 364000000, 368000000, 372000000, 376000000, 380000000, 384000000, 388000000, 392000000, 396000000,
+      400000000, 404000000, 408000000, 412000000, 416000000, 420000000, 424000000, 428000000, 432000000, 436000000,
+      440000000, 444000000, 448000000, 452000000, 456000000, 460000000, 464000000, 468000000, 472000000, 476000000,
+      480000000, 484000000, 488000000, 492000000, 496000000, 500000000, 504000000, 508000000, 512000000, 516000000,
+      520000000, 524000000, 528000000, 532000000, 536000000, 540000000, 544000000, 548000000, 552000000, 556000000,
+      560000000, 564000000, 568000000, 572000000, 576000000, 580000000, 584000000, 588000000, 592000000, 596000000,
+      600000000, 604000000, 608000000, 612000000, 616000000, 620000000, 624000000, 628000000, 632000000, 636000000,
+      640000000, 644000000, 648000000, 652000000, 656000000, 660000000, 664000000, 668000000, 672000000, 676000000,
+      680000000, 684000000, 688000000, 692000000, 696000000, 700000000, 704000000, 708000000, 712000000, 716000000,
+      720000000, 724000000, 728000000, 732000000, 736000000, 740000000, 744000000, 748000000, 752000000, 756000000,
+      760000000,
+    ],
+    go5: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 125, 250, 375, 500, 625, 750, 875, 1000, 1125, 1250, 1375, 1500, 1625, 1750, 1875,
+      2000, 2125, 2250, 2375, 2500, 2625, 2750, 2875, 3000, 3125, 3250, 3375, 3500, 3625, 3750, 3875, 4000, 4125, 4250,
+      4375, 4500, 4625, 4750, 4875, 5000, 5125, 5250, 5375, 5500, 5625, 5750, 5875, 6000, 6125, 6250, 6375, 6500, 6625,
+      6750, 6875, 7000, 7125, 7250, 7375, 7500, 7625, 7750, 7875, 8000, 8125, 8250, 8375, 8500, 8625, 8750, 8875, 9000,
+      9125, 9250, 9375, 9500, 9625, 9750, 9875, 10000, 10125, 10250, 10375, 10500, 10625, 10750, 10875, 11000, 11125,
+      11250, 11375, 11500, 11625, 11750, 11875, 12000, 12125, 12250, 12375, 12500, 12625, 12750, 12875, 13000, 13125,
+      13250, 13375, 13500, 13625, 13750, 13875, 14000, 14125, 14250, 14375, 14500, 14625, 14750, 14875, 15000, 15125,
+      15250, 15375, 15500, 15625, 15750, 15875, 16000, 16125, 16250, 16375, 16500, 16625, 16750, 16875, 17000, 17125,
+      17250, 17375, 17500, 17625, 17750, 17875, 18000, 18125, 18250, 18375, 18500, 18625, 18750, 18875, 19000, 19125,
+      19250, 19375, 19500, 19625, 19750, 19875, 20000, 20125, 20250, 20375, 20500, 20625, 20750, 20875, 21000, 21125,
+      21250, 21375, 21500, 21625, 21750, 21875, 22000, 22125, 22250, 22375, 22500, 22625, 22750, 22875, 23000, 23125,
+      23250, 23375, 23500, 23625, 23750,
+    ],
+  },
+  LGX_M = {
+    Obsi: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Orakel: { cs: "cs1" },
+    Tempel: { cs: "cs1" },
+    Zeus: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Babel: { cs: "cs1" },
+    Kolosseum: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Leuchtturm: { cs: "cs1" },
+    AD: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Galata: { cs: "cs1" },
+    Hagia: { cs: "cs1" },
+    Notre: { cs: "cs1" },
+    MD: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    CDM: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Basilius: { cs: "cs1" },
+    Deal: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Dresdner: { cs: "cs1" },
+    Kapitol: { cs: "cs1" },
+    RAH: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    CF: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Alca: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Atomium: { cs: "cs1" },
+    Needle: { cs: "cs1" },
+    Cape: { cs: "cs2" },
+    Habitat: { cs: "cs2" },
+    Inno: { cs: "cs2" },
+    Lotus: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Friedensturm: { cs: "cs2" },
+    Voyager: { cs: "cs2" },
+    Arche: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Regenwald: { cs: "cs2" },
+    AO: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Gaea: { cs: "cs2" },
+    Tresor: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Atlantis: { cs: "cs2" },
+    BG: { cs: "cs3", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Kraken: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Burg: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    TA: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Gazer: { cs: "cs2" },
+    Virgo: { cs: "cs4", gs: "gs0", co: "co1", me: "me1", go: "go0" },
+    WF: { cs: "cs0", gs: "gs0", co: "co0", me: "me0", go: "go0" },
+    Insel: { cs: "cs2" },
+    "K.I.": { cs: "cs2" },
+    Centaurus: { cs: "cs2", c: "c0", go: "go1" },
+    Hydra: { cs: "cs2", c: "c1", go: "go2" },
+    Pegasus: { cs: "cs2", c: "c2", go: "go3" },
+    Katalysator: { cs: "cs2", go: "go4" },
+    Kriegsschiff: { cs: "cs2", su: "su0", go: "go5" },
+  };
+const LGX_FIELDS = ["cs", "gs", "c", "su", "me", "go"];
+// Zusatzkosten einer Stufe: {cs, gs, c, su, me, go} (fehlt die Art, 0)
+function lgExtra(a, L) {
+  const m = LGX_M[a] || {},
+    g = (k) => (m[k] && LGX_S[m[k]][L - 1]) || 0,
+    co = g("co");
+  return { cs: g("cs"), gs: g("gs"), c: co || g("c"), su: co || g("su"), me: g("me"), go: g("go") };
+}
+// Summe der Zusatzkosten von Stufe von bis bis (Stufen ohne Daten zählen 0)
+function lgExtraSum(a, from, to) {
+  const t = { cs: 0, gs: 0, c: 0, su: 0, me: 0, go: 0 };
+  for (let L = Math.max(1, from); L <= to; L++) {
+    const x = lgExtra(a, L);
+    for (const k of LGX_FIELDS) t[k] += x[k];
+  }
+  return t;
+}
+const ABB_EN = {
+  BG: "BG",
+  Katalysator: "CoCa",
+  Kriegsschiff: "SW",
+  CF: "CF",
+  Tresor: "SV",
+  AO: "AO",
+  Arche: "Arc",
+  "K.I.": "AIC",
+  Alca: "Alcatraz",
+  Atlantis: "AM",
+  Atomium: "Atom",
+  Kapitol: "Capitol",
+  AD: "CoA",
+  Kolosseum: "Colosseum",
+  Deal: "DC",
+  Insel: "FI",
+  Dresdner: "FoD",
+  Gaea: "GS",
+  Galata: "GT",
+  Hagia: "HS",
+  Burg: "HC",
+  Inno: "IT",
+  Leuchtturm: "LoA",
+  Lotus: "LT",
+  Notre: "ND",
+  Orakel: "OoD",
+  Regenwald: "RFP",
+  RAH: "RAH",
+  Basilius: "SBC",
+  WF: "SC",
+  Needle: "SN",
+  MD: "SMB",
+  Tempel: "ToR",
+  Habitat: "Habitat",
+  Kraken: "Kraken",
+  Virgo: "VP",
+  Babel: "ToB",
+  Friedensturm: "TT",
+  Voyager: "V1",
+  Cape: "CC",
+  CDM: "CdM",
+  Gazer: "SG",
+  Siphon: "SHS",
+  TA: "TA",
+  Pegasus: "Pegasus",
+  Centaurus: "Centaurus",
+  Hydra: "Hydra",
+  Obsi: "Obs",
+  Zeus: "Zeus",
+};
+function AB(k) {
+  return (typeof LNG !== "undefined" && LNG === "en" && ABB_EN[k]) || k;
+}
+</script><script>
+// LG-Rechner: Namen, Reihenfolgen, Standardwerte, Zustand, Einklappen, getRow
+// Teil 2/6 von index-lg.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in index.html.
+const NAMES = {
+    AD: "Aachener Dom",
+    Alca: "Alcatraz",
+    AO: "Arktische Orangerie",
+    Atlantis: "Atlantis-Museum",
+    Atomium: "Atomium",
+    Cape: "Cape Canaveral",
+    CDM: "Castel del Monte",
+    CF: "Château Frontenac",
+    Deal: "Deal Castle",
+    Arche: "Die Arche",
+    BG: "Die blaue Galaxie",
+    "K.I.": "K.I. Kern",
+    Kapitol: "Kapitol",
+    Kolosseum: "Kolosseum",
+    Katalysator: "Kosmischer Katalysator",
+    Obsi: "Observatorium",
+    Tresor: "Saatgut-Tresor",
+    Centaurus: "Saturn VI Tor CENTAURUS",
+    TA: "Terrakotta-Armee",
+    WF: "Weltraumfrachter",
+    Zeus: "Zeusstatue",
+    Tempel: "Relikttempel",
+    Orakel: "Orakel von Delphi",
+    Babel: "Turm zu Babel",
+    Leuchtturm: "Leuchtturm von Alexandria",
+    Hagia: "Hagia Sophia",
+    Galata: "Galataturm",
+    MD: "Markusdom",
+    Notre: "Notre Dame",
+    Basilius: "Basilius-Kathedrale",
+    Dresdner: "Dresdner Frauenkirche",
+    RAH: "Royal Albert Hall",
+    Needle: "Space Needle",
+    Habitat: "Das Habitat",
+    Lotus: "Lotustempel",
+    Inno: "Innovation Tower",
+    Friedensturm: "Friedensturm",
+    Voyager: "Voyager V1",
+    Regenwald: "Regenwald-Projekt",
+    Gaea: "Gaea-Statue",
+    Kraken: "Der Kraken",
+    Burg: "Burg Himeji",
+    Gazer: "Star Gazer",
+    Virgo: "Das Virgo-Projekt",
+    Insel: "Fliegende Insel",
+    Pegasus: "Saturn VI Tor PEGASUS",
+    Hydra: "Saturn VI Tor HYDRA",
+    Kriegsschiff: "Stellares Kriegsschiff",
+    Siphon: "Horizontriss-Siphon",
+  },
+  ORDER = [
+    "AD",
+    "Alca",
+    "AO",
+    "Atlantis",
+    "Atomium",
+    "Basilius",
+    "Burg",
+    "Cape",
+    "CDM",
+    "CF",
+    "Habitat",
+    "Virgo",
+    "Deal",
+    "Kraken",
+    "Arche",
+    "BG",
+    "Dresdner",
+    "Insel",
+    "Friedensturm",
+    "Gaea",
+    "Galata",
+    "Hagia",
+    "Siphon",
+    "Inno",
+    "K.I.",
+    "Kapitol",
+    "Kolosseum",
+    "Katalysator",
+    "Leuchtturm",
+    "Lotus",
+    "MD",
+    "Notre",
+    "Obsi",
+    "Orakel",
+    "Regenwald",
+    "Tempel",
+    "RAH",
+    "Tresor",
+    "Centaurus",
+    "Hydra",
+    "Pegasus",
+    "Needle",
+    "Gazer",
+    "Kriegsschiff",
+    "TA",
+    "Babel",
+    "Voyager",
+    "WF",
+    "Zeus",
+  ],
+  DEFAULT_LEVELS = {
+    AD: 0,
+    Alca: 0,
+    AO: 0,
+    Atlantis: 0,
+    Atomium: 0,
+    Basilius: 0,
+    Burg: 0,
+    Cape: 0,
+    CDM: 0,
+    CF: 0,
+    Habitat: 0,
+    Virgo: 0,
+    Deal: 0,
+    Kraken: 0,
+    Arche: 0,
+    BG: 0,
+    Dresdner: 0,
+    Insel: 0,
+    Friedensturm: 0,
+    Gaea: 0,
+    Galata: 0,
+    Hagia: 0,
+    Inno: 0,
+    "K.I.": 0,
+    Kapitol: 0,
+    Kolosseum: 0,
+    Katalysator: 0,
+    Leuchtturm: 0,
+    Lotus: 0,
+    MD: 0,
+    Notre: 0,
+    Obsi: 0,
+    Orakel: 0,
+    Regenwald: 0,
+    Tempel: 0,
+    RAH: 0,
+    Tresor: 0,
+    Centaurus: 0,
+    Hydra: 0,
+    Pegasus: 0,
+    Needle: 0,
+    Gazer: 0,
+    Kriegsschiff: 0,
+    Siphon: 0,
+    TA: 0,
+    Babel: 0,
+    Voyager: 0,
+    WF: 0,
+    Zeus: 0,
+  },
+  DEFAULT_GROUPS = [],
+  DEFAULT_ASSIGNMENT = {},
+  LEVELS_KEY = "lg-levels",
+  GROUPS_KEY = "lg-groups",
+  ASSIGN_KEY = "lg-assignment",
+  FAKTOR_KEY = "lg-faktoren",
+  COLLAPSE_KEY = "lg-collapsed",
+  PLAYER_KEY = "lg-playername",
+  PROFILES_KEY = "lg-profiles",
+  ACTIVE_PROFILE_KEY = "lg-active-profile";
+let levels = Object.assign({}, DEFAULT_LEVELS),
+  groups = JSON.parse(JSON.stringify(DEFAULT_GROUPS)),
+  assignment = Object.assign({}, DEFAULT_ASSIGNMENT),
+  faktoren = {},
+  collapsed = { groupOutputs: {} },
+  playerName = "Bachphu3a",
+  profiles = [{ id: "p1", name: "Profil 1" }],
+  activeProfileId = "p1";
+function pk(a) {
+  return `${a}:${activeProfileId}`;
+}
+// Bauwerke, deren Karte im eingeklappten Abschnitt einzeln aufgeklappt ist (nur Sitzung)
+const openCards = new Set();
+// Gruppen, deren Bauwerke im Status aufgelistet sind (nur Sitzung)
+const openGroups = new Set();
+function applyCollapseState() {
+  const a = { buildings: "panelBuildings", sniper: "panelSniper", groups: "panelGroups", backup: "panelBackup" };
+  for (const e in a) {
+    const t = document.getElementById(a[e]);
+    t && t.classList.toggle("collapsed", !!collapsed[e]);
+  }
+}
+function initCollapsibles() {
+  if (initCollapsibles._bound) {
+    applyCollapseState();
+    return;
+  }
+  ((initCollapsibles._bound = !0),
+    document.body.addEventListener("click", (a) => {
+      const e = a.target.closest(".collapsible-header");
+      if (!e) return;
+      const t = e.dataset.panel;
+      ((collapsed[t] = !collapsed[t]), applyCollapseState(), saveAll());
+    }),
+    document.body.addEventListener("click", (a) => {
+      if (a.target.closest(".st-zhead")) {
+        zeroOpen = !zeroOpen;
+        refreshStatus();
+        return;
+      }
+      const gc = a.target.closest(".st-grp");
+      if (gc) {
+        const gid = gc.dataset.gid;
+        openGroups.has(gid) ? openGroups.delete(gid) : openGroups.add(gid);
+        refreshStatus();
+        return;
+      }
+      const c = a.target.closest(".st-go");
+      if (!c) return;
+      const ab = c.dataset.abbr,
+        findCard = () => {
+          const k = [...document.querySelectorAll("#buildings .lvl-input")].find((x) => x.dataset.abbr === ab);
+          return k && k.closest(".bcard");
+        },
+        go = (flash) => {
+          const card = findCard();
+          if (!card) return;
+          card.scrollIntoView({ block: "center" });
+          if (flash) {
+            card.classList.remove("flash");
+            void card.offsetWidth;
+            card.classList.add("flash");
+          }
+        };
+      if (document.getElementById("panelBuildings").classList.contains("collapsed")) {
+        // eingeklappter Abschnitt: nur die Karte dieses Bauwerks ein-/ausblenden (CSS :has, Klasse xopen)
+        openCards.has(ab) ? openCards.delete(ab) : openCards.add(ab);
+        document
+          .querySelectorAll(`.st-go[data-abbr="${ab}"]`)
+          .forEach((x) => x.classList.toggle("open", openCards.has(ab)));
+        const card = findCard();
+        card && card.classList.toggle("xopen", openCards.has(ab));
+        return;
+      }
+      go(true);
+      setTimeout(() => go(false), 400);
+    }),
+    applyCollapseState());
+}
+// faktoren[LG] ist entweder eine Zahl (nur ein Faktor, altes Format) oder {f, pp, p:[P1..P5]} (pp = Faktor pro Platz an)
+const okF = (v) => typeof v == "number" && !isNaN(v) && v > 0;
+function fkObj(a) {
+  const t = faktoren[a];
+  if (t && typeof t == "object")
+    return {
+      f: okF(t.f) ? t.f : null,
+      pp: !!t.pp,
+      p: [0, 1, 2, 3, 4].map((j) => (okF((t.p || [])[j]) ? t.p[j] : null)),
+    };
+  return { f: okF(t) ? t : null, pp: false, p: [null, null, null, null, null] };
+}
+function setFk(a, patch) {
+  const o = Object.assign(fkObj(a), patch);
+  if (o.f != null && DATA[a] && Math.abs(o.f - defaultFaktor(a, levels[a])) < 1e-9) o.f = null;
+  if (o.pp || o.p.some((v) => v != null)) faktoren[a] = { f: o.f, pp: o.pp, p: o.p };
+  else if (o.f != null) faktoren[a] = o.f;
+  else delete faktoren[a];
+}
+// Standard-Faktor: Kupfer 1,84 (Kupfer-Gebäude, Gold-Gebäude bis Stufe 100), Gold 1,2 (Gold-Gebäude ab Stufe 101)
+const STDF_KEY = "lg-stdfaktor";
+let stdF = { k: 1.84, g: 1.2 };
+try {
+  const t = JSON.parse(localStorage.getItem(STDF_KEY) || "null");
+  t && t.k > 0 && (stdF.k = t.k);
+  t && t.g > 0 && (stdF.g = t.g);
+} catch {}
+function defaultFaktor(a, L) {
+  const e = DATA[a];
+  return e.faktorGold && L > 100 ? stdF.g : stdF.k;
+}
+function effectiveFaktor(a, L = levels[a]) {
+  const e = DATA[a];
+  if (!e) return null;
+  const t = fkObj(a).f;
+  return t != null ? t : defaultFaktor(a, L);
+}
+// Zusatzkosten: Zahl formatieren, Zeile "Kupfer-BP-Sets 3 · Münzen 2.253.489 …" (alle sechs Arten, auch 0)
+function xFmt(n) {
+  return n.toLocaleString(LNG == "de" ? "de-DE" : "en-US");
+}
+function xLine(x) {
+  const p = LGX_FIELDS.map((k) => `${tl("x." + k)} <span class="xn">${xFmt(x[k])}</span>`);
+  return p.join(" · ");
+}
+// Wert von Platz k (1..7) aus einer getRow-Zeile
+function placeVal(row, k) {
+  return k <= 5 ? row[k - 1] : row[k];
+}
+// Faktor je Platz P1..P5 (ohne „pro Platz“ überall der gleiche; leere Felder = Hauptfaktor)
+function placeFaktoren(a, L) {
+  const o = fkObj(a),
+    b = effectiveFaktor(a, L);
+  return [0, 1, 2, 3, 4].map((j) => (o.pp && o.p[j] != null ? o.p[j] : b));
+}
+function getRow(a, e) {
+  const t = DATA[a];
+  if (!t) return null;
+  const n = t.rows[String(e)];
+  if (!n) return null;
+  const [r, o, s, i, u, c, p6 = 0, p7 = 0] = n,
+    d = placeFaktoren(a, e),
+    l = [o, s, i, u, c].map((m, j) => Math.round(m * d[j])),
+    x = [p6, p7].map((m) => Math.round(m * d[4])),
+    f = r - l.reduce((m, g) => m + g, 0) - x[0] - x[1];
+  // [P1..P5, Eigenanteil, P6, P7]; P6/P7 nur bei Gold-Gebäuden ab Stufe 101 (Faktor wie P5)
+  return [...l, f, ...x];
+}
+</script><script>
+// Wörterbuch index.html (LG-Rechner + Powerlevel): texts = Schlüssel -> {en, de}, Platzhalter {name}; Aufruf im Code: tl("schlüssel", {name: wert}).
+// namesEn = englische LG-Namen (Kürzel -> Name). Texte ändern = nur diese Datei.
+(window.I18N = window.I18N || {}).index = {
+  "texts": {
+    "nav.lg": {"en": "GB Calc", "de": "LG-Rechner"},
+    "nav.fe": {"en": "Efficiency", "de": "Effizienz"},
+    "nav.cp": {"en": "Planner", "de": "Planer"},
+    "nav.nf": {"en": "Schedule", "de": "Zeitplan"},
+    "lg.title": {"en": "GB Calculator", "de": "LG-Rechner"},
+    "lg.sub": {"en": "Current contribution values per building – calculated automatically from the FoE table", "de": "Aktuelle Beitragswerte pro Bauwerk – automatisch aus der FoE-Tabelle berechnet"},
+    "common.playerName": {"en": "Player name", "de": "Spielername"},
+    "lg.stdF": {"en": "Default factor", "de": "Standard-Faktor"},
+    "lg.stdFk": {"en": "Copper", "de": "Kupfer"},
+    "lg.stdFg": {"en": "Gold", "de": "Gold"},
+    "lg.buildings": {"en": "Buildings & levels", "de": "Bauwerke & Stufen"},
+    "lg.recalc": {"en": "Recalculate", "de": "Neu berechnen"},
+    "lg.sniper": {"en": "🎯 Sniper offset", "de": "🎯 Sniper-Ausgleich"},
+    "lg.sniperHelp": {"en": "Enter the FP already paid in per place. Right: extra deposit needed = place − paid in (never below 0).", "de": "Eingezahlte FP je Platz eintragen. Benötigt = Platz − eingezahlt (nie unter 0)."},
+    "lg.groups": {"en": "Manage groups", "de": "Gruppen verwalten"},
+    "lg.groupNamePh": {"en": "New group name (e.g. Support team 2)", "de": "Name neue Gruppe (z. B. Förderteam 2)"},
+    "lg.addGroup": {"en": "+ Add group", "de": "+ Gruppe hinzufügen"},
+    "lg.groupsHelp": {"en": "Tap the chips on each building above to assign it to any number of groups (multi-select). Each group gets its own output block below with its own copy and \"+1\" button.", "de": "Jedem Bauwerk oben kannst du per Klick auf die Chips beliebig viele Gruppen zuweisen (Mehrfachauswahl möglich). Jede Gruppe bekommt unten einen eigenen Ausgabe-Block mit eigenem Kopieren- und \"+1\"-Button."},
+    "bk.title": {"en": "💾 Back up & restore data", "de": "💾 Daten sichern & laden"},
+    "bk.outLabel": {"en": "Backup code (to copy/store)", "de": "Sicherungscode (zum Kopieren/Aufbewahren)"},
+    "bk.generate": {"en": "🔄 Generate code", "de": "🔄 Code erzeugen"},
+    "bk.copy": {"en": "📋 Copy", "de": "📋 Kopieren"},
+    "bk.inLabel": {"en": "Paste backup code to restore", "de": "Sicherungscode einfügen zum Wiederherstellen"},
+    "bk.inPh": {"en": "Paste code here…", "de": "Hier Code einfügen…"},
+    "bk.restore": {"en": "📥 Restore", "de": "📥 Wiederherstellen"},
+    "bk.generating": {"en": "Generating code…", "de": "Erzeuge Code…"},
+    "bk.backingUp": {"en": "Backing up {n} profile(s) and tool data.", "de": "Sichert {n} Profil(e) und Tool-Daten."},
+    "bk.copied": {"en": "✓ Copied!", "de": "✓ Kopiert!"},
+    "bk.manual": {"en": "⚠️ Select manually", "de": "⚠️ Manuell markieren"},
+    "bk.needCode": {"en": "Please paste a backup code first.", "de": "Bitte zuerst einen Sicherungscode einfügen."},
+    "bk.badJson": {"en": "⚠️ Invalid code (not valid JSON).", "de": "⚠️ Ungültiger Code (kein gültiges JSON)."},
+    "bk.bad": {"en": "⚠️ Invalid code.", "de": "⚠️ Ungültiger Code."},
+    "bk.noProfiles": {"en": "⚠️ Code contains no profiles.", "de": "⚠️ Code enthält keine Profile."},
+    "bk.restoredN": {"en": "✓ {n} profile(s) restored.", "de": "✓ {n} Profil(e) wiederhergestellt."},
+    "bk.restoredAll": {"en": "✓ {n} profile(s) and tool data restored – reloading…", "de": "✓ {n} Profil(e) und Tool-Daten wiederhergestellt – lädt neu…"},
+    "bk.file": {"en": "⬇️ As file", "de": "⬇️ Als Datei"},
+    "bk.load": {"en": "📂 Load file", "de": "📂 Datei laden"},
+    "bk.fileSaved": {"en": "✓ File saved ({n} profile(s)).", "de": "✓ Datei gespeichert ({n} Profil(e))."},
+    "bk.fileRead": {"en": "⚠️ File could not be read.", "de": "⚠️ Datei konnte nicht gelesen werden."},
+    "bk.restoredInto": {"en": "✓ Restored into profile \"{name}\".", "de": "✓ Wiederhergestellt in Profil \"{name}\"."},
+    "bk.restoredIntoFrom": {"en": "✓ Restored into profile \"{name}\" (code is from profile \"{src}\").", "de": "✓ Wiederhergestellt in Profil \"{name}\" (Code stammt von Profil \"{src}\")."},
+    "lg.factor": {"en": "Factor", "de": "Faktor"},
+    "lg.splitAfter": {"en": "Split after place {n}", "de": "Trennung nach Platz {n}"},
+    "lg.moveUp": {"en": "Move up", "de": "Nach oben"},
+    "lg.moveDown": {"en": "Move down", "de": "Nach unten"},
+    "lg.splitHint": {"en": "Split places: tap a split point", "de": "Plätze aufteilen: Trennpunkt antippen"},
+    "lg.delGroup": {"en": "Delete group", "de": "Gruppe löschen"},
+    "lg.outOfRange": {"en": "{ab} level {lvl} outside the stored range (max {max})", "de": "{ab} Stufe {lvl} außerhalb des gespeicherten Bereichs (max {max})"},
+    "lg.dataMissingLvl": {"en": "Data missing for level {n}", "de": "Daten fehlen für Stufe {n}"},
+    "lg.dataMissing": {"en": "Data missing", "de": "Daten fehlen"},
+    "lg.secured": {"en": "secured", "de": "sicher"},
+    "lg.ownFull": {"en": "Own share (complete)", "de": "Eigenanteil (vollständig)"},
+    "lg.own": {"en": "Own share", "de": "Eigenanteil"},
+    "lg.ownParts": {"en": "Own share ({r})", "de": "Eigenanteil ({r})"},
+    "lg.contrib": {"en": "Contribution", "de": "Beitrag"},
+    "lg.contribParts": {"en": "Contribution ({r})", "de": "Beitrag ({r})"},
+    "lg.copyContrib": {"en": "📋 Copy contribution", "de": "📋 Beitrag kopieren"},
+    "lg.copyContribParts": {"en": "📋 Copy contribution ({r})", "de": "📋 Beitrag ({r}) kopieren"},
+    "lg.dupCopy": {"en": "⚠ Already copied – forgot +1? Tap again to copy", "de": "⚠ Schon kopiert – +1 vergessen? Nochmal tippen zum Kopieren"},
+    "lg.dupCopyNum": {"en": "⚠ Already copied – forgot +1? Hold again to copy", "de": "⚠ Schon kopiert – +1 vergessen? Nochmal gedrückt halten zum Kopieren"},
+    "lg.noBuildings": {"en": "No buildings in this group", "de": "Keine Bauwerke in dieser Gruppe"},
+    "lg.noPlaces": {"en": "No places selected", "de": "Keine Plätze gewählt"},
+    "lg.gbOne": {"en": "{n} GB", "de": "{n} LG"},
+    "lg.statusZero": {"en": "{n} at level 0", "de": "{n} auf Stufe 0"},
+    "lg.gbMany": {"en": "{n} GBs", "de": "{n} LGs"},
+    "lg.mixTitle": {"en": "Place mix (alternative)", "de": "Platz-Mix (Alternative)"},
+    "lg.mixHelp": {"en": "Alternative to the place ranges: pick individual places per GB, e.g. P1, P3 and P5.", "de": "Alternative zu den Platzbereichen: einzelne Plätze pro LG wählen, z. B. P1, P3 und P5."},
+    "lg.mixResetAll": {"en": "↺ Reset mix", "de": "↺ Mix zurücksetzen"},
+    "lg.defaultGroup": {"en": "Group {n}", "de": "Gruppe {n}"},
+    "common.reset": {"en": "Reset", "de": "Zurücksetzen"},
+    "pf.add": {"en": "+ Profile", "de": "+ Profil"},
+    "pf.delete": {"en": "Delete profile", "de": "Profil löschen"},
+    "pf.default": {"en": "Profile {n}", "de": "Profil {n}"},
+    "pf.promptNew": {"en": "Name for the new profile:", "de": "Name für das neue Profil:"},
+    "pf.promptRename": {"en": "New profile name:", "de": "Neuer Profilname:"},
+    "pf.confirmDelete": {"en": "Really delete this profile including all its data?", "de": "Dieses Profil inklusive aller Daten wirklich löschen?"},
+    "upd.msg": {"en": "New version available", "de": "Neue Version verfügbar"},
+    "upd.reload": {"en": "Reload", "de": "Neu laden"},
+    "pl.title": {"en": "Powerlevel Calculator", "de": "Powerlevel-Rechner"},
+    "pl.buildings": {"en": "Buildings & level ranges", "de": "Bauwerke & Stufenbereiche"},
+    "pl.reset": {"en": "↺ Reset", "de": "↺ Zurücksetzen"},
+    "pl.from": {"en": "from", "de": "von"},
+    "pl.to": {"en": "to", "de": "bis"},
+    "pl.level": {"en": "Level", "de": "Stufe"},
+    "pl.totalOwn": {"en": "Total own share, level {a}–{b}", "de": "Gesamt-Eigenanteil Stufe {a}–{b}"},
+    "pl.incomplete": {"en": "(incomplete)", "de": "(unvollständig)"},
+    "pl.ownShort": {"en": "Own share", "de": "Eigenanteil"},
+    "pl.ownPerLevel": {"en": "Own share per level", "de": "Eigenanteil je Stufe"},
+    "x.title": {"en": "Additional costs", "de": "Zusatzkosten"},
+    "x.cs": {"en": "Copper BP sets", "de": "Kupfer-BP-Sets"},
+    "x.gs": {"en": "Gold BP sets", "de": "Gold-BP-Sets"},
+    "x.c": {"en": "Coins", "de": "Münzen"},
+    "x.su": {"en": "Supplies", "de": "Vorräte"},
+    "x.me": {"en": "Medals", "de": "Medaillen"},
+    "x.go": {"en": "Goods (each)", "de": "Güter (je Sorte)"},
+    "x.level": {"en": "Level", "de": "Stufe"},
+    "x.upTo": {"en": "up to level", "de": "bis Stufe"},
+    "x.none": {"en": "none", "de": "keine"},
+    "x.sum": {"en": "Total levels {a}–{b}", "de": "Summe Stufe {a}–{b}"},
+    "x.per": {"en": "Per level", "de": "Je Stufe"},
+    "pl.contribPerLevel": {"en": "Contribution per level", "de": "Beitrag je Stufe"},
+    "pl.copy": {"en": "Copy", "de": "Kopieren"},
+    "pl.perPlace": {"en": "Factor per place", "de": "Faktor pro Platz"}
+  },
+  "namesEn": {
+    "AD": "Cathedral of Aachen",
+    "Alca": "Alcatraz",
+    "AO": "Arctic Orangery",
+    "Atlantis": "Atlantis Museum",
+    "Atomium": "Atomium",
+    "Cape": "Cape Canaveral",
+    "CDM": "Castel del Monte",
+    "CF": "Château Frontenac",
+    "Deal": "Deal Castle",
+    "Arche": "The Arc",
+    "BG": "The Blue Galaxy",
+    "K.I.": "A.I. Core",
+    "Kapitol": "Capitol",
+    "Kolosseum": "Colosseum",
+    "Katalysator": "Cosmic Catalyst",
+    "Obsi": "Observatory",
+    "Tresor": "Seed Vault",
+    "Centaurus": "Saturn VI Gate CENTAURUS",
+    "TA": "Terracotta Army",
+    "WF": "Space Carrier",
+    "Zeus": "Statue of Zeus",
+    "Tempel": "Temple of Relics",
+    "Orakel": "Oracle of Delphi",
+    "Babel": "Tower of Babel",
+    "Leuchtturm": "Lighthouse of Alexandria",
+    "Hagia": "Hagia Sophia",
+    "Galata": "Galata Tower",
+    "MD": "St. Mark's Basilica",
+    "Notre": "Notre Dame",
+    "Basilius": "Saint Basil's Cathedral",
+    "Dresdner": "Frauenkirche of Dresden",
+    "RAH": "Royal Albert Hall",
+    "Needle": "Space Needle",
+    "Habitat": "The Habitat",
+    "Lotus": "Lotus Temple",
+    "Inno": "Innovation Tower",
+    "Friedensturm": "Truce Tower",
+    "Voyager": "Voyager V1",
+    "Regenwald": "Rain Forest Project",
+    "Gaea": "Gaea Statue",
+    "Kraken": "The Kraken",
+    "Burg": "Himeji Castle",
+    "Gazer": "Star Gazer",
+    "Virgo": "The Virgo Project",
+    "Insel": "Flying Island",
+    "Pegasus": "Saturn VI Gate PEGASUS",
+    "Hydra": "Saturn VI Gate HYDRA",
+    "Kriegsschiff": "Stellar Warship",
+    "Siphon": "Shattered Horizon Siphon"
+  }
+};
+</script><script>
+// Schlüssel-basierte Übersetzung: createT(texts, getLang) -> t(key, params).
+// texts = { "bereich.name": { en: "…", de: "…" } }, Platzhalter {name} werden aus params ersetzt.
+// Fehlender Schlüssel: der Schlüssel selbst wird angezeigt und in der Konsole gemeldet; fehlende Sprache fällt auf en zurück.
+function createT(texts, getLang) {
+  return function t(key, params) {
+    const e = texts[key];
+    if (!e) {
+      console.warn("i18n: fehlender Schlüssel", key);
+      return key;
+    }
+    const s = e[getLang()] != null ? e[getLang()] : e.en;
+    return params ? s.replace(/\{(\w+)\}/g, (m, k) => (k in params ? params[k] : m)) : s;
+  };
+}
+</script><script>
+// Sprache für index.html (LG-Rechner + Powerlevel): LNG, tl(key, params), applyI18n(root), setLang.
+// Texte stehen in i18n/index.js (texts = Schlüssel -> {en, de}); Aufruf im Code: tl(Schlüssel, {name: wert}).
+// Statischer HTML-Text: data-i18n / data-i18n-title / data-i18n-placeholder (+ data-i18n-p = JSON-Parameter), siehe applyI18n.
+const NAMES_DE = Object.assign({}, NAMES),
+  NAMES_EN = I18N.index.namesEn;
+let LNG = "en";
+try {
+  JSON.parse(localStorage.getItem("foeff:lang")) === "de" && (LNG = "de");
+} catch {}
+const tl = createT(I18N.index.texts, () => LNG);
+function i18nNames() {
+  Object.assign(NAMES, LNG === "en" ? NAMES_EN : NAMES_DE);
+}
+// Standard-Profilnamen "Profil 3" sind gespeicherte Daten; in der Anzeige werden sie je Sprache dargestellt.
+function profName(n) {
+  const m = /^Profil (\d+)$/.exec(n);
+  return m ? tl("pf.default", { n: m[1] }) : n;
+}
+// Dasselbe für Standard-Gruppennamen „Gruppe 2“.
+function groupName(n) {
+  const m = /^Gruppe (\d+)$/.exec(n);
+  return m ? tl("lg.defaultGroup", { n: m[1] }) : n;
+}
+function applyI18n(root) {
+  root.querySelectorAll("[data-i18n]").forEach((e) => {
+    e.textContent = tl(e.dataset.i18n, e.dataset.i18nP ? JSON.parse(e.dataset.i18nP) : undefined);
+  });
+  root.querySelectorAll("[data-i18n-title]").forEach((e) => e.setAttribute("title", tl(e.dataset.i18nTitle)));
+  root
+    .querySelectorAll("[data-i18n-placeholder]")
+    .forEach((e) => e.setAttribute("placeholder", tl(e.dataset.i18nPlaceholder)));
+}
+// Text mit Schlüssel setzen und merken, damit er beim Sprachwechsel mitübersetzt wird (z. B. Backup-Status).
+function setI18n(el, key, params) {
+  el.dataset.i18n = key;
+  params ? (el.dataset.i18nP = JSON.stringify(params)) : delete el.dataset.i18nP;
+  el.textContent = tl(key, params);
+}
+function applyI18nAll() {
+  applyI18n(document);
+  const h = document.getElementById("plHost"),
+    sr = h && h.shadowRoot;
+  sr && applyI18n(sr);
+}
+function setLang(l, keep) {
+  if (l === LNG) return;
+  LNG = l;
+  if (!keep)
+    try {
+      localStorage.setItem("foeff:lang", JSON.stringify(l));
+    } catch {}
+  i18nNames();
+  const e = document.getElementById("lgSel");
+  e && (e.value = l);
+  applyI18nAll();
+  renderAll();
+  window.plRender && window.plRender();
+  feOn = 0;
+}
+function i18nSync() {
+  let v = "en";
+  try {
+    JSON.parse(localStorage.getItem("foeff:lang")) === "de" && (v = "de");
+  } catch {}
+  v !== LNG && setLang(v, 1);
+}
+addEventListener("storage", (e) => {
+  (e.key === "foeff:lang" || e.key === null) && i18nSync();
+});
+document.getElementById("lgSel").value = LNG;
+document.getElementById("lgSel").onchange = (e) => setLang(e.target.value);
+i18nNames();
+applyI18nAll();
+// Die Tab-Leiste steht im HTML hinter den Skripten: nach dem Parsen noch einmal anwenden.
+document.addEventListener("DOMContentLoaded", applyI18nAll);
+</script><script>
+// LG-Rechner: Berechnung (Sicherungs-Serien, Platzgruppen, Farben, Gruppen-Helfer, Sniper-Summe)
+// Teil 3/6 von index-lg.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in index.html.
+function computeSichernSeries(a, e) {
+  const t = getRow(a, e);
+  if (!t) return null;
+  const o = DATA[a].rows[String(e)][0],
+    s = [...t.slice(0, 5), t[6], t[7]];
+  let i = o;
+  const u = [];
+  for (let c = 0; c < 7; c++) {
+    const d = s[c];
+    if (d === 0) {
+      u.push({ place: c + 1, kosten: 0, secured: !0, value: 0 });
+      continue;
+    }
+    const l = i - 2 * d,
+      f = l <= 0,
+      m = f ? 0 : l;
+    (u.push({ place: c + 1, kosten: d, secured: f, value: m }), (i = i - d - m));
+  }
+  return u;
+}
+function parsePlaceGroups(a) {
+  let e;
+  return (
+    Array.isArray(a)
+      ? (e = a.slice())
+      : (e = String(a || "")
+          .split(",")
+          .map((t) => parseInt(t.trim(), 10))),
+    (e = e.filter((t) => Number.isInteger(t) && t >= 1 && t <= 5)),
+    (e = [...new Set(e)].sort((t, n) => t - n)),
+    (!e.length || e[e.length - 1] !== 5) && e.push(5),
+    e
+  );
+}
+function partitionsFromCutoffs(a) {
+  const e = [];
+  let t = 1;
+  for (const n of a) n < t || (e.push([t, n]), (t = n + 1));
+  return e;
+}
+const FAKTOR_COLORS = { "1.90": "var(--border)", 1.95: "var(--accent)" },
+  FAKTOR_FALLBACK_PALETTE = ["#8e6fdc", "#5fbf7a", "#dc6f6f", "#6fa8dc", "#dc9a6f", "#6fdccf", "#dc6fc7"];
+function colorForFaktor(a) {
+  if (typeof a != "number" || isNaN(a)) return "var(--border)";
+  const e = a.toFixed(2);
+  if (FAKTOR_COLORS[e]) return FAKTOR_COLORS[e];
+  let t = 0;
+  for (const n of e) t = (t * 31 + n.charCodeAt(0)) >>> 0;
+  return FAKTOR_FALLBACK_PALETTE[t % FAKTOR_FALLBACK_PALETTE.length];
+}
+function ensureValidAssignment() {
+  const a = groups.map((e) => e.id);
+  ORDER.forEach((e) => {
+    let t = assignment[e];
+    (typeof t == "string" && (t = [t]),
+      Array.isArray(t) || (t = []),
+      (t = t.filter((n) => a.includes(n))),
+      t.length === 0 && a.length && (t = [a[0]]),
+      (assignment[e] = t));
+  });
+}
+function toggleGroupMembership(a, e) {
+  const t = assignment[a] || [];
+  (t.includes(e) ? t.length > 1 && (assignment[a] = t.filter((n) => n !== e)) : (assignment[a] = t.concat([e])),
+    saveAll(),
+    renderBuildings(),
+    renderOutput());
+}
+let sniper = {};
+function sniperSum(a, e, t) {
+  const n = getRow(a, levels[a]),
+    r = sniper[a];
+  if (!n || !r) return 0;
+  let o = 0;
+  for (let s = e; s <= Math.min(t, 4); s++) {
+    const i = r[s - 1];
+    typeof i == "number" && !isNaN(i) && (o += Math.max(0, n[s - 1] - i));
+  }
+  return o;
+}
+</script><script>
+// LG-Rechner: Anzeige und Ausgabe (Sniper, Gebäude, Gruppen, Bereichs-/Mix-Ausgabe, Kopieren)
+// Teil 4/6 von index-lg.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in index.html.
+function renderSniper() {
+  const a = document.getElementById("sniperList");
+  a &&
+    ((a.innerHTML =
+      '<div class="sn-row sn-h"><span></span><span>P1</span><span>P2</span><span>P3</span><span>P4</span><span class="sn-x">+FP</span></div>' +
+      ORDER.map((e) => {
+        const t = getRow(e, levels[e]);
+        if (!t) return "";
+        const n = sniper[e] || [];
+        return `<div class="sn-row"><span>${AB(e)}</span>${[0, 1, 2, 3].map((r) => (t[r] ? `<input type="number" min="0" inputmode="numeric" data-abbr="${e}" data-k="${r}" placeholder="${t[r]}" value="${typeof n[r] == "number" ? n[r] : ""}">` : "<span></span>")).join("")}<span class="sn-x" data-need="${e}">${sniperSum(e, 1, 4) ? "+" + sniperSum(e, 1, 4).toLocaleString(LNG == "de" ? "de-DE" : "en-US") : ""}</span></div>`;
+      }).join("")),
+    a.querySelectorAll("input").forEach((e) => {
+      e.addEventListener("input", () => {
+        const t = e.dataset.abbr,
+          n = +e.dataset.k,
+          r = sniper[t] || (sniper[t] = ["", "", "", ""]);
+        r[n] = e.value === "" ? "" : parseFloat(e.value);
+        const x = a.querySelector(`[data-need="${t}"]`),
+          v = sniperSum(t, 1, 4);
+        (x && (x.textContent = v ? "+" + v.toLocaleString(LNG == "de" ? "de-DE" : "en-US") : ""), renderOutput());
+      });
+    }));
+}
+// Zusatzkosten einer Gruppe (ausklappbar): je Gebäude die Kosten der eingestellten Stufe
+function xcostGroupHTML(g, r) {
+  const rows = r
+    .filter((a) => levels[a] >= 1 && DATA[a] && levels[a] <= DATA[a].max)
+    .map((a) => {
+      return `<div class="xrow"><span>${AB(a)} · ${tl("x.level")} ${levels[a]}</span>${xLine(lgExtra(a, levels[a]))}</div>`;
+    });
+  return `<details class="xcost" data-gid="${g.id}"${(collapsed.xopen || {})[g.id] ? " open" : ""}><summary>${tl("x.title")}</summary>${rows.join("") || `<div class="xrow">${tl("x.none")}</div>`}</details>`;
+}
+function renderBuildings() {
+  renderSniper();
+  const a = document.getElementById("buildings");
+  ((a.innerHTML = ""),
+    ORDER.forEach((e) => {
+      const t = document.createElement("div");
+      t.className = "bcard" + (openCards.has(e) ? " xopen" : "");
+      const n = DATA[e] ? DATA[e].max : 0,
+        r = effectiveFaktor(e),
+        fo = fkObj(e);
+      ((t.style.borderColor = colorForFaktor(r)),
+        (Math.abs(r - defaultFaktor(e, levels[e])) > 1e-9 || fo.pp) && (t.style.borderWidth = "2px"));
+      const o = groups
+        .map(
+          (s) =>
+            `<span class="group-chip${(assignment[e] || []).includes(s.id) ? " active" : ""}" data-abbr="${e}" data-gid="${s.id}">${groupName(s.name)}</span>`,
+        )
+        .join("");
+      ((t.innerHTML = `
+<div class="name">${NAMES[e]} (${AB(e)})</div>
+<input type="number" min="0" max="${n}" value="${levels[e]}" data-abbr="${e}" class="lvl-input" />
+<label class="small" style="margin:5px 0 0 0;">${tl("lg.factor")}
+<input type="number" min="1" step="0.01" value="${r}" data-abbr="${e}" class="faktor-input" />
+</label>
+<label class="pp-toggle"><input type="checkbox" data-abbr="${e}" class="pp-check"${fo.pp ? " checked" : ""} /> ${tl("pl.perPlace")}</label>
+${fo.pp ? `<div class="pp-row">${[0, 1, 2, 3, 4].map((d) => `<div class="pp-cell"><span>P${d + 1}</span><input type="number" min="0" step="0.01" placeholder="${r}" value="${fo.p[d] != null ? fo.p[d] : ""}" data-abbr="${e}" data-n="${d}" class="pfaktor-input" /></div>`).join("")}</div>` : ""}
+<div class="group-chips">${o}</div>
+`),
+        a.appendChild(t));
+    }),
+    a.querySelectorAll(".lvl-input").forEach((e) => {
+      e.addEventListener("change", (t) => {
+        const n = t.target.dataset.abbr,
+          r = parseInt(t.target.value, 10);
+        !isNaN(r) && r >= 0 && ((levels[n] = r), delete sniper[n], saveAll(), renderSniper(), renderOutput());
+      });
+    }),
+    a.querySelectorAll(".faktor-input").forEach((e) => {
+      e.addEventListener("change", (t) => {
+        const n = t.target.dataset.abbr,
+          r = parseFloat(t.target.value.replace(",", ".")),
+          o = DATA[n];
+        o && !isNaN(r) && r > 0 && (setFk(n, { f: r }), saveAll(), renderBuildings(), renderOutput());
+      });
+    }),
+    a.querySelectorAll(".pp-check").forEach((e) => {
+      e.addEventListener("change", (t) => {
+        (setFk(t.target.dataset.abbr, { pp: t.target.checked }), saveAll(), renderBuildings(), renderOutput());
+      });
+    }),
+    a.querySelectorAll(".pfaktor-input").forEach((e) => {
+      e.addEventListener("change", (t) => {
+        const n = t.target.dataset.abbr,
+          r = parseFloat(t.target.value.replace(",", ".")),
+          p = fkObj(n).p;
+        ((p[+t.target.dataset.n] = !isNaN(r) && r > 0 ? r : null),
+          setFk(n, { p }),
+          saveAll(),
+          renderBuildings(),
+          renderOutput());
+      });
+    }),
+    a.querySelectorAll(".group-chip").forEach((e) => {
+      e.addEventListener("click", (t) => {
+        toggleGroupMembership(t.target.dataset.abbr, t.target.dataset.gid);
+      });
+    }));
+}
+function renderGroupList() {
+  const a = document.getElementById("groupList");
+  ((a.innerHTML = ""),
+    groups.forEach((e, t) => {
+      const n = document.createElement("div");
+      n.className = "grouprow";
+      const r = Array.isArray(e.placeGroups) ? e.placeGroups.filter((s) => s >= 1 && s <= 4) : [],
+        o = (s) =>
+          `<button class="ptoggle${r.includes(s) ? " active" : ""}" data-gid="${e.id}" data-b="${s}" title="${tl("lg.splitAfter", { n: s })}">${s}|${s + 1}</button>`;
+      ((n.innerHTML = `
+<button class="ghost small" data-gid="${e.id}" data-action="up" ${t === 0 ? "disabled" : ""} title="${tl("lg.moveUp")}">▲</button>
+<button class="ghost small" data-gid="${e.id}" data-action="down" ${t === groups.length - 1 ? "disabled" : ""} title="${tl("lg.moveDown")}">▼</button>
+<input type="text" value="${groupName(e.name)}" data-gid="${e.id}" class="gname" />
+<div class="ptoggles" title="${tl("lg.splitHint")}">
+${o(1)}${o(2)}${o(3)}${o(4)}
+</div>
+<button class="ghost small" data-gid="${e.id}" data-action="delete">${tl("lg.delGroup")}</button>
+`),
+        a.appendChild(n));
+    }),
+    a.querySelectorAll(".gname").forEach((e) => {
+      e.addEventListener("change", (t) => {
+        const n = t.target.dataset.gid,
+          r = groups.find((o) => o.id === n);
+        (r && (r.name = t.target.value.trim() || r.name), saveAll(), renderBuildings(), renderOutput());
+      });
+    }),
+    a.querySelectorAll(".ptoggle").forEach((e) => {
+      e.addEventListener("click", (t) => {
+        const n = t.currentTarget.dataset.gid,
+          r = parseInt(t.currentTarget.dataset.b, 10),
+          o = groups.find((i) => i.id === n);
+        if (!o) return;
+        let s = Array.isArray(o.placeGroups) ? o.placeGroups.filter((i) => i >= 1 && i <= 4) : [];
+        (s.includes(r) ? (s = s.filter((i) => i !== r)) : (s = [...s, r]),
+          s.length ? (o.placeGroups = s) : delete o.placeGroups,
+          saveAll(),
+          renderGroupList(),
+          renderOutput());
+      });
+    }),
+    a.querySelectorAll("button[data-action=delete]").forEach((e) => {
+      e.addEventListener("click", (t) => {
+        const n = t.target.dataset.gid;
+        groups.length <= 1 ||
+          ((groups = groups.filter((r) => r.id !== n)),
+          ensureValidAssignment(),
+          saveAll(),
+          renderGroupList(),
+          renderBuildings(),
+          renderOutput());
+      });
+    }),
+    a.querySelectorAll("button[data-action=up], button[data-action=down]").forEach((e) => {
+      e.addEventListener("click", (t) => {
+        const n = t.currentTarget.dataset.gid,
+          r = t.currentTarget.dataset.action === "up" ? -1 : 1,
+          o = groups.findIndex((i) => i.id === n),
+          s = o + r;
+        s < 0 ||
+          s >= groups.length ||
+          (([groups[o], groups[s]] = [groups[s], groups[o]]), saveAll(), renderGroupList(), renderOutput());
+      });
+    }));
+}
+function buildRangeOutput(a, e, t) {
+  const n = [],
+    r = [],
+    o = [];
+  return (
+    a.forEach((s) => {
+      const i = getRow(s, levels[s]);
+      if (!i) {
+        (n.push(tl("lg.outOfRange", { ab: AB(s), lvl: levels[s], max: DATA[s] ? DATA[s].max : "?" })),
+          r.push(`${NAMES[s]} (${AB(s)}): <span class="warn">${tl("lg.dataMissingLvl", { n: levels[s] })}</span>`),
+          o.push(`<span class="b1">${playerName}</span> ${AB(s)} <span class="warn">${tl("lg.dataMissing")}</span>`));
+        return;
+      }
+      const t2 = t === 5 ? 7 : t,
+        c =
+          computeSichernSeries(s, levels[s])
+            .slice(e - 1, t2)
+            .reduce((l, f) => l + f.value, 0) + sniperSum(s, e, t);
+      r.push(
+        c === 0
+          ? `${NAMES[s]} (${AB(s)}): <span class="num">${tl("lg.secured")}</span>`
+          : `${NAMES[s]} (${AB(s)}): <span class="num">${c}</span>`,
+      );
+      const d = [];
+      for (let l = t2; l >= e; l--) placeVal(i, l) !== 0 && d.push(`P${l}(<span class="num">${placeVal(i, l)}</span>)`);
+      o.push(`<span class="b1">${playerName}</span> ${AB(s)} ${d.join(" ")}`.trimEnd());
+    }),
+    {
+      eigText: r.join(`
+`),
+      beitragText: o.join(`
+`),
+      warnings: n,
+    }
+  );
+}
+function fallbackCopy(a) {
+  const e = document.createElement("textarea");
+  ((e.value = a),
+    (e.style.position = "fixed"),
+    (e.style.left = "-9999px"),
+    (e.style.top = "0"),
+    document.body.appendChild(e),
+    e.focus(),
+    e.select());
+  let t = !1;
+  try {
+    t = document.execCommand("copy");
+  } catch {
+    t = !1;
+  }
+  return (document.body.removeChild(e), t);
+}
+// Kopier-Häkchen bleiben nach dem Schließen der App erhalten (localStorage)
+const copyMarks = new Proxy(
+  (() => {
+    try {
+      return JSON.parse(localStorage.getItem("lg-copymarks")) || {};
+    } catch {
+      return {};
+    }
+  })(),
+  {
+    set(t, k, v) {
+      t[k] = v;
+      try {
+        localStorage.setItem("lg-copymarks", JSON.stringify(t));
+      } catch {}
+      return true;
+    },
+  },
+);
+function grpSig(r) {
+  return r.map((p) => p + levels[p]).join(",");
+}
+function wireCopyButton(a, e, sig) {
+  const t = document.getElementById(a);
+  const base = t ? t.textContent : "",
+    marked = () => sig !== undefined && copyMarks[a] === sig;
+  t && marked() && (t.textContent = "✓ " + base);
+  let armed = false,
+    armT = 0;
+  t &&
+    t.addEventListener("click", () => {
+      // Schon kopiert (Häkchen): erster Tipp kopiert nicht, sondern zeigt die Warnung; erst ein zweiter Tipp auf die Warnung kopiert
+      if (marked() && !armed) {
+        armed = true;
+        t.textContent = tl("lg.dupCopy");
+        t.classList.add("dup");
+        clearTimeout(armT);
+        armT = setTimeout(() => {
+          armed = false;
+          t.classList.remove("dup");
+          t.textContent = (marked() ? "✓ " : "") + base;
+        }, 4000);
+        return;
+      }
+      clearTimeout(armT);
+      armed = false;
+      t.classList.remove("dup");
+      const n = document.getElementById(e).innerText,
+        r = (marked() ? "✓ " : "") + base,
+        o = () => {
+          sig !== undefined && (copyMarks[a] = sig);
+          t.textContent = tl("bk.copied");
+          setTimeout(() => {
+            t.textContent = (marked() ? "✓ " : "") + base;
+          }, 1500);
+        },
+        s = () => {
+          ((t.textContent = tl("bk.manual")),
+            setTimeout(() => {
+              t.textContent = r;
+            }, 2e3));
+        };
+      navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext
+        ? navigator.clipboard
+            .writeText(n)
+            .then(o)
+            .catch(() => {
+              fallbackCopy(n) ? o() : s();
+            })
+        : fallbackCopy(n)
+          ? o()
+          : s();
+    });
+}
+function renderGroupOutputs() {
+  const a = document.getElementById("groupOutputs");
+  a.classList.toggle("noanim", goDrawn);
+  goDrawn = !0;
+  a.innerHTML = "";
+  let e = [];
+  groups.forEach((n) => {
+    const r = ORDER.filter((p) => (assignment[p] || []).includes(n.id)),
+      o = document.createElement("div"),
+      s = !!collapsed.groupOutputs[n.id];
+    o.className = "panel group-output-panel" + (s ? " collapsed" : "");
+    o.dataset.gid = n.id;
+    o.dataset.sig = grpSig(r);
+    const i = `btnplus_${n.id}`,
+      sig = grpSig(r),
+      u = parsePlaceGroups(n.placeGroups),
+      c = partitionsFromCutoffs(u),
+      d = c.length === 1 && c[0][0] === 1 && c[0][1] === 5;
+    let l = "";
+    const f = [];
+    if (!d) {
+      const p = `t1full_${n.id}`,
+        w = buildRangeOutput(r, 1, 5);
+      l += `
+<label class="small">${tl("lg.ownFull")}</label>
+<div class="out" id="${p}">${r.length ? w.eigText : `<span style="color:var(--muted)">${tl("lg.noBuildings")}</span>`}</div>
+<div style="height:18px;border-bottom:1px solid var(--border);margin-bottom:14px;"></div>
+`;
+    }
+    (c.forEach(([p, w], h) => {
+      const b = `t1_${n.id}_${h}`,
+        k = `t2_${n.id}_${h}`,
+        v = `btnc2_${n.id}_${h}`,
+        y = buildRangeOutput(r, p, w);
+      e = e.concat(y.warnings);
+      const O = p === w ? `P${p}` : `P${p}–P${w}`,
+        E = d ? tl("lg.own") : tl("lg.ownParts", { r: O }),
+        S = d ? tl("lg.contrib") : tl("lg.contribParts", { r: O });
+      ((l += `
+<label class="small">${E}</label>
+<div class="out" id="${b}">${r.length ? y.eigText : `<span style="color:var(--muted)">${tl("lg.noBuildings")}</span>`}</div>
+<div style="height:10px"></div>
+<label class="small">${S}</label>
+<div class="out" id="${k}">${r.length ? y.beitragText : `<span style="color:var(--muted)">${tl("lg.noBuildings")}</span>`}</div>
+<button class="copybtn ghost" id="${v}">${d ? tl("lg.copyContrib") : tl("lg.copyContribParts", { r: O })}</button>
+${h < c.length - 1 ? '<div style="height:18px;border-bottom:1px solid var(--border);margin-bottom:14px;"></div>' : ""}
+`),
+        f.push({ t2id: k, btn2id: v }));
+    }),
+      (o.innerHTML = `
+<div class="group-output-title gt">
+<span class="gt-main"><span class="go-arrow">▼</span>${groupName(n.name)} (${tl(r.length === 1 ? "lg.gbOne" : "lg.gbMany", { n: r.length })})</span>
+<button class="secondary plus1" id="${i}" ${r.length ? "" : "disabled"}>+1</button>
+<span class="lvlline">${r.map((p) => `<span class="chip ${levels[p] > 0 ? "on" : "zero"}">${AB(p)} ${levels[p]}</span>`).join("")}</span>
+</div>
+<div class="go-body">${l}${xcostGroupHTML(n, r)}${gmixHTML(n, r)}</div>
+`),
+      a.appendChild(o),
+      f.forEach((p) => {
+        wireCopyButton(p.btn2id, p.t2id, sig);
+      }),
+      wireGMix(o, n, r),
+      o.querySelectorAll("details.xcost").forEach((x) => {
+        x.addEventListener("toggle", () => {
+          collapsed.xopen || (collapsed.xopen = {});
+          !!collapsed.xopen[n.id] !== x.open &&
+            (x.open ? (collapsed.xopen[n.id] = 1) : delete collapsed.xopen[n.id], saveAll());
+        });
+      }),
+      markCopied(o),
+      o.querySelector(".group-output-title").addEventListener("click", (p) => {
+        p.target.closest("button") ||
+          ((collapsed.groupOutputs[n.id] = !collapsed.groupOutputs[n.id]),
+          o.classList.toggle("collapsed", collapsed.groupOutputs[n.id]),
+          saveAll());
+      }));
+    const g = document.getElementById(i);
+    g &&
+      g.addEventListener("click", () => {
+        (r.forEach((p) => {
+          ((levels[p] = levels[p] + 1), delete sniper[p]);
+        }),
+          (collapsed.sniper = !0),
+          applyCollapseState(),
+          saveAll(),
+          renderBuildings(),
+          renderOutput());
+      });
+  });
+  ((statusWarn = e), refreshStatus());
+}
+let statusWarn = [];
+function refreshStatus() {
+  document.getElementById("status").innerHTML = statusWarn.length
+    ? statusWarn.map((n) => `⚠\uFE0F ${n}`).join("<br>")
+    : statusChips();
+}
+// Status: nur Gebäude mit Stufe > 0 als antippbare Chips; Tipp klappt „Bauwerke & Stufen“ auf und springt zur Karte
+let goDrawn = !1,
+  zeroOpen = !1; // „auf Stufe 0“ im Status aufgeklappt (nur Sitzung)
+function statusChips() {
+  const chip = (n) => {
+      const on = levels[n] > 0;
+      return `<button type="button" class="chip ${on ? "on" : "zero"} st-go${openCards.has(n) ? " open" : ""}" data-abbr="${n}">${AB(n)} ${levels[n] || 0}</button>`;
+    },
+    zero = ORDER.filter((n) => !(levels[n] > 0)),
+    gb = groups
+      .map((g) => ({ g, m: ORDER.filter((p) => (assignment[p] || []).includes(g.id)) }))
+      .filter((x) => x.m.length > 0);
+  // Gruppen getrennt: Tipp auf eine Gruppe zeigt alle ihre Bauwerke (auch Stufe 0), Tipp darauf klappt deren Karte auf
+  return (
+    `<div class="st-chips">${ORDER.filter((n) => levels[n] > 0)
+      .map(chip)
+      .join("")}</div>` +
+    (zero.length
+      ? `<button type="button" class="st-zhead" aria-expanded="${zeroOpen}">${zeroOpen ? "▼" : "▶"} ${tl("lg.statusZero", { n: zero.length })}</button>${
+          zeroOpen ? `<div class="st-chips">${zero.map(chip).join("")}</div>` : ""
+        }`
+      : "") +
+    (gb.length
+      ? `<div class="st-groups">${gb
+          .map(
+            (x) =>
+              `<div class="st-gblock"><button type="button" class="chip grp st-grp${openGroups.has(x.g.id) ? " open" : ""}" data-gid="${x.g.id}">${openGroups.has(x.g.id) ? "▾" : "▸"} ${groupName(x.g.name)} · ${x.m.length}</button>${
+                openGroups.has(x.g.id) ? `<div class="st-gm">${x.m.map(chip).join("")}</div>` : ""
+              }</div>`,
+          )
+          .join("")}</div>`
+      : "")
+  );
+}
+function numKey(n) {
+  const p = n.closest(".group-output-panel"),
+    o = n.closest(".out");
+  if (!p || !o) return null;
+  return (
+    p.dataset.gid +
+    "|" +
+    [...p.querySelectorAll(".out")].indexOf(o) +
+    ":" +
+    [...o.querySelectorAll(".num")].indexOf(n) +
+    ":" +
+    n.textContent.trim()
+  );
+}
+function markCopied(p) {
+  p.querySelectorAll(".out .num").forEach((n) => {
+    const k = numKey(n);
+    n.classList.toggle("cpd", !!k && copyMarks[k] === p.dataset.sig);
+  });
+}
+// Long-Press auf eine Zahl: Ist sie schon als kopiert markiert, kopiert der erste Druck nicht (true = nur Warnung zeigen);
+// erst ein zweiter Druck auf dieselbe Zahl innerhalb von 4 s kopiert (wie wireCopyButton bei den Kopier-Knöpfen).
+let cpArm = { k: "", t: 0 };
+function lgCopyCheck(n) {
+  const k = numKey(n);
+  if (!k) return !1;
+  const sig = n.closest(".group-output-panel").dataset.sig,
+    id = k + "|" + sig;
+  if (copyMarks[k] === sig && cpArm.k !== id) {
+    cpArm.k = id;
+    clearTimeout(cpArm.t);
+    cpArm.t = setTimeout(() => (cpArm.k = ""), 4000);
+    return !0;
+  }
+  clearTimeout(cpArm.t);
+  cpArm.k = "";
+  copyMarks[k] = sig;
+  n.classList.add("cpd");
+  return !1;
+}
+function renderOutput() {
+  renderGroupOutputs();
+}
+function sniperSumSet(a, S) {
+  const n = getRow(a, levels[a]),
+    r = sniper[a];
+  if (!n || !r) return 0;
+  let o = 0;
+  for (const k of S) {
+    if (k > 4) continue;
+    const i = r[k - 1];
+    typeof i == "number" && !isNaN(i) && (o += Math.max(0, n[k - 1] - i));
+  }
+  return o;
+}
+function gmixOf(g) {
+  collapsed.gmix || (collapsed.gmix = {});
+  return collapsed.gmix[g] || (collapsed.gmix[g] = {});
+}
+function gmixSel(g, a) {
+  const m = ((collapsed.gmix || {})[g] || {})[a];
+  return Array.isArray(m) ? [1, 2, 3, 4, 5].filter((k) => m[k - 1]) : [];
+}
+function buildGMixOutput(g, list) {
+  const eig = [],
+    beit = [];
+  list.forEach((s) => {
+    const S = gmixSel(g, s);
+    if (!S.length) return;
+    const i = getRow(s, levels[s]);
+    if (!i) {
+      (eig.push(`${NAMES[s]} (${AB(s)}): <span class="warn">${tl("lg.dataMissingLvl", { n: levels[s] })}</span>`),
+        beit.push(`<span class="b1">${playerName}</span> ${AB(s)} <span class="warn">${tl("lg.dataMissing")}</span>`));
+      return;
+    }
+    const ser = computeSichernSeries(s, levels[s]),
+      S2 = S.includes(5) ? [...S, 6, 7] : S,
+      c = S2.reduce((q, k) => q + ser[k - 1].value, 0) + sniperSumSet(s, S);
+    eig.push(
+      c === 0
+        ? `${NAMES[s]} (${AB(s)}): <span class="num">${tl("lg.secured")}</span>`
+        : `${NAMES[s]} (${AB(s)}): <span class="num">${c}</span>`,
+    );
+    const d = [];
+    for (let l = 7; l >= 1; l--)
+      S2.includes(l) && placeVal(i, l) !== 0 && d.push(`P${l}(<span class="num">${placeVal(i, l)}</span>)`);
+    beit.push(`<span class="b1">${playerName}</span> ${AB(s)} ${d.join(" ")}`.trimEnd());
+  });
+  return { eigText: eig.join("\n"), beitragText: beit.join("\n"), count: eig.length };
+}
+function renderGMixOut(g, list, host) {
+  const r = buildGMixOutput(g, list),
+    em = `<span style="color:var(--muted)">${tl("lg.noPlaces")}</span>`,
+    t = `gmixtxt_${g}`,
+    bt = `gmixbtn_${g}`;
+  ((host.innerHTML = `<label class="small">${tl("lg.ownParts", { r: "Mix" })}</label><div class="out">${r.count ? r.eigText : em}</div><div style="height:10px"></div><label class="small">${tl("lg.contribParts", { r: "Mix" })}</label><div class="out" id="${t}">${r.count ? r.beitragText : em}</div><button class="copybtn ghost" id="${bt}">${tl("lg.copyContribParts", { r: "Mix" })}</button>`),
+    wireCopyButton(bt, t));
+}
+function mixRowState(row, on) {
+  (row.querySelector(".mix-name").classList.toggle("on", on), (row.querySelector(".mix-reset").disabled = !on));
+}
+function gmixHTML(n, r) {
+  if (!r.length) return "";
+  const open = !!(collapsed.gmixOpen || {})[n.id],
+    rows = r
+      .map((e) => {
+        const m = ((collapsed.gmix || {})[n.id] || {})[e],
+          on = Array.isArray(m) && m.some(Boolean);
+        return `<div class="mix-row"><span class="mix-name${on ? " on" : ""}">${NAMES[e]} (${AB(e)})</span><span class="mix-boxes">${[0, 1, 2, 3, 4].map((k) => `<label class="mix-box"><input type="checkbox" data-abbr="${e}" data-k="${k}"${on && m[k] ? " checked" : ""}><span>${k + 1}</span></label>`).join("")}</span><button class="ghost small mix-reset" data-abbr="${e}" title="${tl("common.reset")}"${on ? "" : " disabled"}>↺</button></div>`;
+      })
+      .join("");
+  return `<div class="gmix${open ? "" : " gmix-closed"}"><div style="height:18px;border-bottom:1px solid var(--border);margin-bottom:14px;"></div><div class="gmix-head"><span class="go-arrow">▼</span>${tl("lg.mixTitle")}</div><div class="gmix-body"><div class="status" style="margin-bottom:10px;">${tl("lg.mixHelp")}</div>${rows}<div class="btnrow" style="margin-top:8px;"><button class="mix-danger gmix-reset-all">${tl("lg.mixResetAll")}</button></div><div style="height:14px;"></div><div class="gmix-out"></div></div></div>`;
+}
+function wireGMix(o, n, r) {
+  const root = o.querySelector(".gmix");
+  if (!root) return;
+  const out = root.querySelector(".gmix-out"),
+    upd = () => renderGMixOut(n.id, r, out);
+  (root.querySelector(".gmix-head").addEventListener("click", () => {
+    collapsed.gmixOpen || (collapsed.gmixOpen = {});
+    const cl = root.classList.toggle("gmix-closed");
+    ((collapsed.gmixOpen[n.id] = !cl), saveAll());
+  }),
+    root.querySelectorAll('input[type="checkbox"]').forEach((c) => {
+      c.addEventListener("change", (ev) => {
+        const b = ev.target,
+          e = b.dataset.abbr,
+          g = gmixOf(n.id),
+          m = g[e] || (g[e] = [0, 0, 0, 0, 0]);
+        m[+b.dataset.k] = b.checked ? 1 : 0;
+        const on = m.some(Boolean);
+        (on || delete g[e], mixRowState(b.closest(".mix-row"), on), saveAll(), upd());
+      });
+    }),
+    root.querySelectorAll(".mix-reset").forEach((b) => {
+      b.addEventListener("click", (ev) => {
+        const row = ev.currentTarget.closest(".mix-row");
+        (delete gmixOf(n.id)[ev.currentTarget.dataset.abbr],
+          row.querySelectorAll("input").forEach((i) => {
+            i.checked = !1;
+          }),
+          mixRowState(row, !1),
+          saveAll(),
+          upd());
+      });
+    }),
+    root.querySelector(".gmix-reset-all").addEventListener("click", () => {
+      (collapsed.gmix && delete collapsed.gmix[n.id],
+        root.querySelectorAll("input").forEach((i) => {
+          i.checked = !1;
+        }),
+        root.querySelectorAll(".mix-row").forEach((w) => mixRowState(w, !1)),
+        saveAll(),
+        upd());
+    }),
+    upd());
+}
+</script><script>
+// LG-Rechner: Speichern/Laden und Profile
+// Teil 5/6 von index-lg.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in index.html.
+async function saveAll() {
+  try {
+    if (window.storage && typeof window.storage.set == "function") {
+      (await window.storage.set(pk(LEVELS_KEY), JSON.stringify(levels), !1),
+        await window.storage.set(pk(GROUPS_KEY), JSON.stringify(groups), !1),
+        await window.storage.set(pk(ASSIGN_KEY), JSON.stringify(assignment), !1),
+        await window.storage.set(pk(FAKTOR_KEY), JSON.stringify(faktoren), !1),
+        await window.storage.set(pk(COLLAPSE_KEY), JSON.stringify(collapsed), !1),
+        await window.storage.set(pk(PLAYER_KEY), playerName, !1),
+        await window.storage.set(PROFILES_KEY, JSON.stringify(profiles), !1),
+        await window.storage.set(ACTIVE_PROFILE_KEY, activeProfileId, !1));
+      return;
+    }
+  } catch (a) {
+    console.warn("window.storage nicht verfügbar, nutze localStorage:", a);
+  }
+  try {
+    (localStorage.setItem(pk(LEVELS_KEY), JSON.stringify(levels)),
+      localStorage.setItem(pk(GROUPS_KEY), JSON.stringify(groups)),
+      localStorage.setItem(pk(ASSIGN_KEY), JSON.stringify(assignment)),
+      localStorage.setItem(pk(FAKTOR_KEY), JSON.stringify(faktoren)),
+      localStorage.setItem(pk(COLLAPSE_KEY), JSON.stringify(collapsed)),
+      localStorage.setItem(pk(PLAYER_KEY), playerName),
+      localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles)),
+      localStorage.setItem(ACTIVE_PROFILE_KEY, activeProfileId));
+  } catch (a) {
+    console.error("Speichern fehlgeschlagen:", a);
+  }
+}
+async function loadOneKey(a) {
+  try {
+    if (window.storage && typeof window.storage.get == "function") {
+      const e = await window.storage.get(a, !1);
+      if (e && e.value) return e.value;
+    }
+  } catch {}
+  try {
+    return localStorage.getItem(a);
+  } catch {
+    return null;
+  }
+}
+async function saveOneKey(a, e) {
+  try {
+    window.storage && typeof window.storage.set == "function" && (await window.storage.set(a, e, !1));
+  } catch {}
+  try {
+    localStorage.setItem(a, e);
+  } catch (t) {
+    console.error("Speichern fehlgeschlagen:", a, t);
+  }
+}
+async function loadProfileDataRaw(a) {
+  const e = (g) => `${g}:${a}`,
+    t = await loadOneKey(e(LEVELS_KEY)),
+    n = await loadOneKey(e(GROUPS_KEY)),
+    r = await loadOneKey(e(ASSIGN_KEY)),
+    o = await loadOneKey(e(FAKTOR_KEY)),
+    s = await loadOneKey(e(COLLAPSE_KEY)),
+    i = await loadOneKey(e(PLAYER_KEY));
+  let u = Object.assign({}, DEFAULT_LEVELS),
+    c = JSON.parse(JSON.stringify(DEFAULT_GROUPS)),
+    d = Object.assign({}, DEFAULT_ASSIGNMENT),
+    l = {},
+    f = { groupOutputs: {} },
+    m = "Bachphu3a";
+  try {
+    t && (u = Object.assign({}, DEFAULT_LEVELS, JSON.parse(t)));
+  } catch {}
+  try {
+    n && (c = JSON.parse(n));
+  } catch {}
+  try {
+    r && (d = Object.assign({}, DEFAULT_ASSIGNMENT, JSON.parse(r)));
+  } catch {}
+  try {
+    o && (l = JSON.parse(o));
+  } catch {}
+  try {
+    s && (f = Object.assign({ groupOutputs: {} }, JSON.parse(s)));
+  } catch {}
+  return (i && (m = i), { levels: u, groups: c, assignment: d, faktoren: l, collapsed: f, playerName: m });
+}
+async function saveProfileDataRaw(a, e) {
+  const t = (n) => `${n}:${a}`;
+  (await saveOneKey(t(LEVELS_KEY), JSON.stringify(e.levels || {})),
+    await saveOneKey(t(GROUPS_KEY), JSON.stringify(e.groups || [])),
+    await saveOneKey(t(ASSIGN_KEY), JSON.stringify(e.assignment || {})),
+    await saveOneKey(t(FAKTOR_KEY), JSON.stringify(e.faktoren || {})),
+    await saveOneKey(t(COLLAPSE_KEY), JSON.stringify(e.collapsed || { groupOutputs: {} })),
+    await saveOneKey(t(PLAYER_KEY), e.playerName || "Bachphu3a"));
+}
+async function loadCurrentProfileData() {
+  const a = await loadOneKey(pk(LEVELS_KEY)),
+    e = await loadOneKey(pk(GROUPS_KEY)),
+    t = await loadOneKey(pk(ASSIGN_KEY)),
+    n = await loadOneKey(pk(FAKTOR_KEY)),
+    r = await loadOneKey(pk(COLLAPSE_KEY)),
+    o = await loadOneKey(pk(PLAYER_KEY));
+  ((levels = Object.assign({}, DEFAULT_LEVELS)),
+    (groups = JSON.parse(JSON.stringify(DEFAULT_GROUPS))),
+    (assignment = Object.assign({}, DEFAULT_ASSIGNMENT)),
+    (faktoren = {}),
+    (collapsed = { groupOutputs: {} }),
+    (playerName = "Bachphu3a"));
+  try {
+    a && (levels = Object.assign({}, DEFAULT_LEVELS, JSON.parse(a)));
+  } catch {}
+  try {
+    e && (groups = JSON.parse(e));
+  } catch {}
+  try {
+    t && (assignment = Object.assign({}, DEFAULT_ASSIGNMENT, JSON.parse(t)));
+  } catch {}
+  try {
+    n && (faktoren = JSON.parse(n));
+  } catch {}
+  try {
+    r && (collapsed = Object.assign({ groupOutputs: {} }, JSON.parse(r)));
+  } catch {}
+  (collapsed.groupOutputs || (collapsed.groupOutputs = {}), o && (playerName = o), ensureValidAssignment());
+}
+function renderAll() {
+  const a = window.scrollY;
+  ((sniper = {}), (collapsed.sniper = !0));
+  renderProfileTabs();
+  const e = document.getElementById("playerNameInput");
+  (e && (e.value = playerName),
+    renderBuildings(),
+    renderGroupList(),
+    renderOutput(),
+    initCollapsibles(),
+    requestAnimationFrame(() => window.scrollTo(0, a)));
+}
+async function switchProfile(a) {
+  a !== activeProfileId && ((activeProfileId = a), await loadCurrentProfileData(), await saveAll(), renderAll());
+}
+async function addProfile() {
+  const a = (prompt(tl("pf.promptNew"), `Profil ${profiles.length + 1}`) || "").trim();
+  if (!a) return;
+  const e = "p" + Date.now();
+  (profiles.push({ id: e, name: a }),
+    (activeProfileId = e),
+    (levels = Object.assign({}, DEFAULT_LEVELS)),
+    (groups = JSON.parse(JSON.stringify(DEFAULT_GROUPS))),
+    (assignment = Object.assign({}, DEFAULT_ASSIGNMENT)),
+    (faktoren = {}),
+    (collapsed = { groupOutputs: {} }),
+    await saveAll(),
+    renderAll());
+}
+function renameProfile(a) {
+  const e = profiles.find((n) => n.id === a);
+  if (!e) return;
+  const t = (prompt(tl("pf.promptRename"), e.name) || "").trim();
+  t && ((e.name = t), saveAll(), renderProfileTabs());
+}
+async function deleteProfile(a) {
+  profiles.length <= 1 ||
+    (confirm(tl("pf.confirmDelete")) &&
+      ((profiles = profiles.filter((e) => e.id !== a)),
+      activeProfileId === a && ((activeProfileId = profiles[0].id), await loadCurrentProfileData()),
+      await saveAll(),
+      renderAll()));
+}
+function renderProfileTabs() {
+  const a = document.getElementById("profileBar");
+  if (!a) return;
+  ((a.innerHTML = ""),
+    profiles.forEach((t) => {
+      const n = document.createElement("div");
+      ((n.className = "profile-tab" + (t.id === activeProfileId ? " active" : "")),
+        (n.innerHTML =
+          `<span class="pf-name">${profName(t.name)}</span>` +
+          (profiles.length > 1 ? `<span class="pf-del" data-pid="${t.id}" title="${tl("pf.delete")}">✕</span>` : "")),
+        n.querySelector(".pf-name").addEventListener("click", () => switchProfile(t.id)),
+        n.querySelector(".pf-name").addEventListener("dblclick", (o) => {
+          (o.stopPropagation(), renameProfile(t.id));
+        }));
+      const r = n.querySelector(".pf-del");
+      (r &&
+        r.addEventListener("click", (o) => {
+          (o.stopPropagation(), deleteProfile(t.id));
+        }),
+        a.appendChild(n));
+    }));
+  const e = document.createElement("button");
+  ((e.className = "profile-add"),
+    (e.textContent = tl("pf.add")),
+    e.addEventListener("click", addProfile),
+    a.appendChild(e));
+}
+</script><script>
+// LG-Rechner: bootstrap(), „Neu berechnen“, Backup-Code
+// Teil 6/6 von index-lg.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in index.html.
+async function bootstrap() {
+  const a = await loadOneKey(PROFILES_KEY),
+    e = await loadOneKey(ACTIVE_PROFILE_KEY);
+  let t = !1;
+  if (a)
+    try {
+      profiles = JSON.parse(a);
+    } catch {}
+  else {
+    const n = await loadOneKey(LEVELS_KEY),
+      r = await loadOneKey(GROUPS_KEY),
+      o = await loadOneKey(ASSIGN_KEY),
+      s = await loadOneKey(FAKTOR_KEY),
+      i = await loadOneKey(COLLAPSE_KEY);
+    if (n || r || o || s) {
+      t = !0;
+      try {
+        n && (levels = Object.assign({}, DEFAULT_LEVELS, JSON.parse(n)));
+      } catch {}
+      try {
+        r && (groups = JSON.parse(r));
+      } catch {}
+      try {
+        o && (assignment = Object.assign({}, DEFAULT_ASSIGNMENT, JSON.parse(o)));
+      } catch {}
+      try {
+        s && (faktoren = JSON.parse(s));
+      } catch {}
+      try {
+        i && (collapsed = Object.assign({ groupOutputs: {} }, JSON.parse(i)));
+      } catch {}
+    }
+  }
+  (e && profiles.some((n) => n.id === e) ? (activeProfileId = e) : (activeProfileId = profiles[0].id),
+    t ? await saveAll() : await loadCurrentProfileData(),
+    renderAll());
+}
+["stdFk", "stdFg"].forEach((id) => {
+  const el = document.getElementById(id),
+    key = id == "stdFk" ? "k" : "g";
+  el.value = stdF[key];
+  el.addEventListener("change", () => {
+    const v = parseFloat(el.value);
+    stdF[key] = v > 0 ? v : key == "k" ? 1.84 : 1.2;
+    el.value = stdF[key];
+    try {
+      localStorage.setItem(STDF_KEY, JSON.stringify(stdF));
+    } catch {}
+    renderAll();
+    typeof plDone != "undefined" && plDone && window.plRender && window.plRender();
+  });
+});
+(document.getElementById("btnRecalc").addEventListener("click", () => {
+  renderOutput();
+}),
+  document.getElementById("playerNameInput").addEventListener("change", (a) => {
+    ((playerName = a.target.value.trim() || "Bachphu3a"), (a.target.value = playerName), saveAll(), renderOutput());
+  }));
+async function generateBackupCode() {
+  const a = {};
+  for (const e of profiles)
+    if (e.id === activeProfileId)
+      a[e.id] = { name: e.name, levels, groups, assignment, faktoren, collapsed, playerName };
+    else {
+      const t = await loadProfileDataRaw(e.id);
+      a[e.id] = Object.assign({ name: e.name }, t);
+    }
+  return JSON.stringify({ v: 3, activeProfileId, profiles: a, store: collectToolStore() });
+}
+// Einstellungen und Daten der anderen Tools (FoEfficiency, Stadtplaner, Powerlevel, Sprache) liegen im selben localStorage
+const TOOL_STORE_PREFIX = ["lg-stdfaktor", "foeff:", "foe-cp:", "lg-powerlevel-state"];
+const isToolKey = (k) => TOOL_STORE_PREFIX.some((p) => k.startsWith(p));
+function collectToolStore() {
+  const o = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      isToolKey(k) && (o[k] = localStorage.getItem(k));
+    }
+  } catch {}
+  return o;
+}
+// Schreibt die Tool-Daten aus dem Code zurück; true, wenn sich etwas geändert hat (dann Seite neu laden)
+function restoreToolStore(st) {
+  let changed = false;
+  if (!st || typeof st != "object") return false;
+  try {
+    for (const k in st) {
+      if (!isToolKey(k) || typeof st[k] != "string" || localStorage.getItem(k) === st[k]) continue;
+      localStorage.setItem(k, st[k]);
+      changed = true;
+    }
+  } catch {}
+  return changed;
+}
+(document.getElementById("btnBackupGenerate").addEventListener("click", async () => {
+  const a = document.getElementById("backupOutput");
+  ((a.value = tl("bk.generating")),
+    (a.value = await generateBackupCode()),
+    setI18n(document.getElementById("backupStatus"), "bk.backingUp", { n: profiles.length }));
+}),
+  document.getElementById("btnBackupCopy").addEventListener("click", async () => {
+    const a = document.getElementById("backupOutput");
+    (!a.value || a.value === tl("bk.generating")) && (a.value = await generateBackupCode());
+    const e = document.getElementById("btnBackupCopy"),
+      t = e.textContent,
+      n = (r) => {
+        ((e.textContent = r ? tl("bk.copied") : tl("bk.manual")),
+          setTimeout(
+            () => {
+              e.textContent = t;
+            },
+            r ? 1500 : 2e3,
+          ));
+      };
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext)
+      try {
+        (await navigator.clipboard.writeText(a.value), n(!0));
+        return;
+      } catch {}
+    try {
+      (a.focus(), a.select());
+      const r = document.execCommand("copy");
+      n(r);
+    } catch {
+      n(!1);
+    }
+  }),
+  document.getElementById("btnBackupFile").addEventListener("click", async () => {
+    const code = await generateBackupCode(),
+      a = document.createElement("a");
+    ((document.getElementById("backupOutput").value = code),
+      (a.href = URL.createObjectURL(new Blob([code], { type: "application/json" }))),
+      (a.download = `foe-tools-backup-${new Date().toISOString().slice(0, 10)}.json`),
+      document.body.appendChild(a),
+      a.click(),
+      a.remove(),
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000),
+      setI18n(document.getElementById("backupStatus"), "bk.fileSaved", { n: profiles.length }));
+  }),
+  document
+    .getElementById("btnBackupLoad")
+    .addEventListener("click", () => document.getElementById("backupFile").click()),
+  document.getElementById("backupFile").addEventListener("change", async (ev) => {
+    const f = ev.target.files[0];
+    ev.target.value = "";
+    if (!f) return;
+    try {
+      document.getElementById("backupInput").value = (await f.text()).trim();
+    } catch {
+      setI18n(document.getElementById("backupStatus"), "bk.fileRead");
+      return;
+    }
+    document.getElementById("btnBackupRestore").click();
+  }),
+  document.getElementById("btnBackupRestore").addEventListener("click", async () => {
+    const a = document.getElementById("backupStatus"),
+      e = document.getElementById("backupInput").value.trim();
+    if (!e) {
+      setI18n(a, "bk.needCode");
+      return;
+    }
+    let t;
+    try {
+      t = JSON.parse(e);
+    } catch {
+      setI18n(a, "bk.badJson");
+      return;
+    }
+    if (!t || typeof t != "object") {
+      setI18n(a, "bk.bad");
+      return;
+    }
+    if ((t.v === 2 || t.v === 3) && t.profiles && typeof t.profiles == "object") {
+      const n = [];
+      for (const r in t.profiles) {
+        const o = t.profiles[r] || {};
+        (n.push({ id: r, name: o.name || r }), await saveProfileDataRaw(r, o));
+      }
+      if (!n.length) {
+        setI18n(a, "bk.noProfiles");
+        return;
+      }
+      ((profiles = n),
+        (activeProfileId =
+          t.activeProfileId && n.some((r) => r.id === t.activeProfileId) ? t.activeProfileId : n[0].id),
+        await loadCurrentProfileData(),
+        await saveAll(),
+        renderAll(),
+        setI18n(a, "bk.restoredN", { n: n.length }));
+      if (restoreToolStore(t.store)) {
+        setI18n(a, "bk.restoredAll", { n: n.length });
+        setTimeout(() => location.reload(), 1200);
+      }
+    } else {
+      (t.levels && (levels = Object.assign({}, DEFAULT_LEVELS, t.levels)),
+        Array.isArray(t.groups) && t.groups.length && (groups = t.groups),
+        t.assignment && (assignment = Object.assign({}, DEFAULT_ASSIGNMENT, t.assignment)),
+        t.faktoren && (faktoren = t.faktoren),
+        t.collapsed && (collapsed = Object.assign({ groupOutputs: {} }, t.collapsed)),
+        collapsed.groupOutputs || (collapsed.groupOutputs = {}),
+        t.playerName && (playerName = t.playerName),
+        ensureValidAssignment(),
+        await saveAll(),
+        renderAll());
+      const n = (profiles.find((r) => r.id === activeProfileId) || {}).name || "?";
+      t.profileName
+        ? setI18n(a, "bk.restoredIntoFrom", { name: n, src: t.profileName })
+        : setI18n(a, "bk.restoredInto", { name: n });
+    }
+    document.getElementById("backupInput").value = "";
+  }),
+  document.getElementById("btnAddGroup").addEventListener("click", () => {
+    const a = document.getElementById("newGroupName"),
+      e = a.value.trim() || `Gruppe ${groups.length + 1}`,
+      t = "g" + Date.now();
+    (groups.push({ id: t, name: e }), (a.value = ""), saveAll(), renderGroupList(), renderBuildings(), renderOutput());
+  }),
+  bootstrap());
+</script>
 <div id="plHost"></div>
 <div id="feWrap" hidden><iframe id="fe" title="FoEfficiency"></iframe><iframe id="cpf" title="Stadtplaner" hidden></iframe><iframe id="nf" title="Zeitplan" hidden></iframe></div>
 <nav id="tabs"><button data-t="lg"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6M9 12h.01M15 12h.01"/></svg></span><span data-i18n="nav.lg">LG-Rechner</span></button><button data-t="pl"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>Powerlevel</button><button data-t="fe"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-5 3 3 5-7"/></svg></span><span data-i18n="nav.fe">Effizienz</span></button><button data-t="cp"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></span><span data-i18n="nav.cp">Planer</span></button><button data-t="nf"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0"/></svg></span><span data-i18n="nav.nf">Zeitplan</span></button></nav>
-<script src="js/index-powerlevel.js"></script>
-<script src="js/pick.js"></script><script src="js/index-pick.js"></script><script src="js/index-copy.js"></script>
-<script src="js/index-update.js"></script>
+<script>
+let plDone = 0;
+function setView(n) {
+  const i = n === "pl";
+  (document.body.classList.toggle("pl", i), i && !plDone && ((plDone = 1), plInit()), scrollTo(0, 0));
+}
+function plInit() {
+  const n = document.getElementById("plHost").attachShadow({ mode: "open" });
+  n.innerHTML = `<style>*{box-sizing:border-box}.appbar{display:flex;align-items:center;min-height:var(--bar-h);padding:6px 118px 6px 14px;margin:0 -12px 12px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}h1{font-size:var(--f-title);margin:0;color:var(--text);display:flex;align-items:center;gap:8px}h1::before{content:"";width:4px;height:1.1em;border-radius:2px;background:var(--accent)}td,input[type=number]{font-variant-numeric:tabular-nums}h2.section{font-size:1rem;color:var(--accent2);margin:0 0 10px}.collapsible-header{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px}.collapse-arrow{display:inline-block;font-size:.75rem;transition:transform .15s ease}.panel.collapsed .collapse-arrow{transform:rotate(-90deg)}.panel.collapsed .panel-body{display:none}.panel.collapsed h2.section{margin-bottom:0}.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}.xout{background:var(--in);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.78rem;line-height:1.55;margin-bottom:12px}.xscroll{max-height:220px;overflow:auto}.xout .xn{color:var(--accent)}.xout .xl{color:var(--muted);display:inline-block;min-width:4.2em}label.small{font-size:.78rem;color:var(--muted);display:block;margin-bottom:0}input[type=text],input[type=number]{background:var(--in);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:.85rem}.playerbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}.playerbar input{width:200px}.pl-buildings{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px}.pl-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 10px}.pl-card .name{font-size:.72rem;color:var(--muted);margin-bottom:5px}.pl-card .lvl-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}.pl-card .lvl-row input{width:100%;text-align:center;padding:4px}.pl-card .chips{display:flex;gap:3px;margin-bottom:5px}.place-chip{flex:1;text-align:center;padding:3px 0;font-size:.68rem;font-weight:600;background:var(--in);border:1px solid var(--border);color:var(--muted);border-radius:4px;cursor:pointer;user-select:none}.place-chip.active{background:var(--accent2);color:var(--on-accent);border-color:var(--accent2)}.pl-card .faktor-row input[type=number]{width:100%;text-align:center;padding:3px;font-size:.78rem}.pp-toggle{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:.7rem;color:var(--muted);cursor:pointer}.pp-toggle input{width:auto}.pp-row{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:5px}.pp-cell span{display:block;text-align:center;font-size:.62rem;color:var(--muted)}.pp-cell input{width:100%;text-align:center;padding:3px 1px;font-size:.72rem}.total-display{text-align:center;padding:6px 0 12px}.total-display .num{font-size:2.1rem;font-weight:700;color:var(--accent);display:block}.total-display .label{color:var(--muted);font-size:.8rem}.out{background:var(--in);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:Cascadia Code,Courier New,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin-bottom:12px}.out .lvl{color:var(--accent2)}.out .num{color:var(--accent)}.out .warn{color:var(--danger)}.lvl-block{background:var(--in);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-family:Cascadia Code,Courier New,monospace;font-size:.8rem;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.lvl-block .lvl-label{flex:0 0 auto;color:var(--accent2);min-width:58px}.lvl-block .lvl-own{margin-top:6px;font-size:.7rem;color:var(--muted)}.lvl-block .lvl-own .num{display:block;font-size:.8rem;font-weight:700;color:var(--accent)}.lvl-block .txt{flex:1 1 auto;white-space:pre-wrap;word-break:break-word;line-height:1.5}.lvl-block .txt .lvl{color:var(--accent2)}.lvl-block .txt .num{color:var(--accent)}.lvl-block .txt .warn{color:var(--danger)}.lvl-copy{flex:0 0 auto;font-size:.68rem;padding:4px 8px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer}button{background:var(--accent);color:var(--on-accent);border:none;padding:9px 16px;border-radius:7px;font-weight:600;cursor:pointer;font-size:.9rem}button.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}button:active{transform:scale(.97)}.resetrow{text-align:center;margin-top:8px}@keyframes pu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.panel,.pl-card,.lvl-block{animation:pu .3s ease both}input,button,.place-chip{transition:background-color .2s,border-color .2s,transform .12s}@media(prefers-reduced-motion:no-preference){:host{interpolate-size:allow-keywords}.panel-body{overflow:hidden;height:auto;transition:height .3s ease,opacity .25s ease,visibility .3s}.panel.collapsed .panel-body{display:block;height:0;opacity:0;visibility:hidden}details::details-content{block-size:0;overflow:hidden;opacity:0;transition:block-size .3s ease,opacity .25s ease,content-visibility .3s allow-discrete}details[open]::details-content{block-size:auto;opacity:1}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style><header class="appbar"><h1 data-i18n="pl.title">Powerlevel-Rechner</h1></header>
+<div class="playerbar">
+<label class="small" data-i18n="common.playerName">Spielername</label>
+<input type="text" id="playerNameInput" />
+</div>
+<div class="panel" id="panelBuildings">
+<h2 class="section collapsible-header" data-panel="buildings">
+<span class="collapse-arrow" id="arrowBuildings">▼</span> <span data-i18n="pl.buildings">Bauwerke &amp; Stufenbereiche</span>
+</h2>
+<div class="panel-body">
+<div class="pl-buildings" id="plBuildings"></div>
+</div>
+</div>
+<div id="outputs"></div>
+<div class="resetrow">
+<button class="danger" id="btnReset" data-i18n="pl.reset">↺ Zurücksetzen</button>
+</div>`;
+  applyI18n(n);
+  function i(a, e, t) {
+    const o = DATA[a];
+    if (!o) return null;
+    const l = o.rows[String(e)];
+    if (!l) return null;
+    const [r, d, m, v, s, h, p6 = 0, p7 = 0] = l,
+      w = (j) => {
+        const q = Array.isArray(t) ? t[Math.min(j, 4)] : t;
+        return typeof q == "number" && !isNaN(q) && q > 0 ? q : defaultFaktor(a, e);
+      },
+      b = [d, m, v, s, h, p6, p7].map((k, j) => Math.round(k * w(j))),
+      B = r - b.reduce((k, C) => k + C, 0);
+    return [...b, B];
+  }
+  const E = "lg-powerlevel-state";
+  let c = "Bachphu3a",
+    x = {},
+    p = !1,
+    u = {};
+  function N() {
+    return { from: "", to: "", faktor: null, placeCount: 5, perPlace: false, faktoren: [null, null, null, null, null] };
+  }
+  function f(a) {
+    const e = x[a] || (x[a] = N());
+    (Array.isArray(e.faktoren) && e.faktoren.length === 5) || (e.faktoren = [null, null, null, null, null]);
+    return e;
+  }
+  function T(a) {
+    const e = f(a);
+    return typeof e.faktor == "number" && !isNaN(e.faktor) && e.faktor > 0 ? e.faktor : null;
+  }
+  function TP(a) {
+    const e = f(a),
+      b = T(a);
+    if (!e.perPlace || !Array.isArray(e.faktoren)) return b;
+    return [0, 1, 2, 3, 4].map((j) => {
+      const q = e.faktoren[j];
+      return typeof q == "number" && !isNaN(q) && q > 0 ? q : b;
+    });
+  }
+  function L(a) {
+    const e = f(a);
+    if (e.from === "" || e.to === "") return !1;
+    const t = parseInt(e.from, 10),
+      o = parseInt(e.to, 10);
+    return !isNaN(t) && !isNaN(o) && t >= 0 && o >= t;
+  }
+  function I(a) {
+    const e = document.createElement("textarea");
+    ((e.value = a),
+      (e.style.position = "fixed"),
+      (e.style.left = "-9999px"),
+      document.body.appendChild(e),
+      e.focus(),
+      e.select());
+    let t = !1;
+    try {
+      t = document.execCommand("copy");
+    } catch {
+      t = !1;
+    }
+    return (document.body.removeChild(e), t);
+  }
+  // Kopier-Häkchen je Stufe bleiben erhalten (gleicher Text = gleiches Ergebnis; ändert sich der Text, verschwindet das Häkchen)
+  const CM = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("lg-pl-copymarks")) || {};
+      } catch {
+        return {};
+      }
+    })(),
+    cmSave = () => {
+      try {
+        localStorage.setItem("lg-pl-copymarks", JSON.stringify(CM));
+      } catch {}
+    };
+  function A(a, e, ok) {
+    const t = a.textContent,
+      o = () => {
+        (ok && ok(),
+          (a.textContent = "✓"),
+          setTimeout(() => {
+            a.textContent = a.dataset.done ? "✓ " + t.replace("✓ ", "") : t;
+          }, 1200));
+      },
+      l = () => {
+        ((a.textContent = "⚠\uFE0F"),
+          setTimeout(() => {
+            a.textContent = t;
+          }, 1500));
+      };
+    navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext
+      ? navigator.clipboard
+          .writeText(e)
+          .then(o)
+          .catch(() => {
+            I(e) ? o() : l();
+          })
+      : I(e)
+        ? o()
+        : l();
+  }
+  async function $(a) {
+    try {
+      if (window.storage && typeof window.storage.get == "function") {
+        const e = await window.storage.get(a, !1);
+        if (e && e.value) return e.value;
+      }
+    } catch {}
+    try {
+      return localStorage.getItem(a);
+    } catch {
+      return null;
+    }
+  }
+  async function g() {
+    const e = JSON.stringify({ playerName: c, configs: x, collapsedTop: p, collapsedOutputs: u });
+    try {
+      localStorage.setItem(E, e);
+    } catch {}
+    try {
+      window.storage && typeof window.storage.set == "function" && (await window.storage.set(E, e, !1));
+    } catch {}
+  }
+  async function z() {
+    const a = await $(E);
+    let e = !1;
+    if (a)
+      try {
+        const t = JSON.parse(a);
+        (t.playerName && ((c = t.playerName), (e = !0)),
+          t.configs && (x = t.configs),
+          typeof t.collapsedTop == "boolean" && (p = t.collapsedTop),
+          t.collapsedOutputs && (u = t.collapsedOutputs));
+      } catch {}
+    if (!e) {
+      const t = await $("lg-active-profile");
+      if (t) {
+        const o = await $(`lg-playername:${t}`);
+        o && (c = o);
+      }
+    }
+  }
+  function S() {
+    const a = n.getElementById("plBuildings");
+    ((a.innerHTML = ""),
+      ORDER.forEach((e) => {
+        const t = f(e),
+          o = T(e),
+          l = [1, 2, 3, 4, 5]
+            .map(
+              (d) =>
+                `<div class="place-chip${d <= t.placeCount ? " active" : ""}" data-abbr="${e}" data-n="${d}">${d}</div>`,
+            )
+            .join(""),
+          r = document.createElement("div");
+        ((r.className = "pl-card"),
+          (r.innerHTML = `
+<div class="name">${NAMES[e]} (${AB(e)})</div>
+<div class="lvl-row">
+<input type="number" min="0" placeholder="${tl("pl.from")}" value="${t.from}" data-abbr="${e}" data-field="from" />
+<input type="number" min="0" placeholder="${tl("pl.to")}" value="${t.to}" data-abbr="${e}" data-field="to" />
+</div>
+<div class="chips">${l}</div>
+<div class="faktor-row"><input type="number" min="1" step="0.01" value="${o == null ? "" : o}" placeholder="${DATA[e].faktorGold ? stdF.k + " / " + stdF.g : stdF.k}" data-abbr="${e}" data-field="faktor" /><label class="pp-toggle"><input type="checkbox" data-abbr="${e}" data-field="perPlace"${t.perPlace ? " checked" : ""} /> ${tl("pl.perPlace")}</label></div>
+${t.perPlace ? `<div class="pp-row">${[0, 1, 2, 3, 4].map((d) => `<div class="pp-cell"><span>P${d + 1}</span><input type="number" min="0" step="0.01" placeholder="${o == null ? stdF.k : o}" value="${typeof t.faktoren[d] == "number" ? t.faktoren[d] : ""}" data-abbr="${e}" data-field="pfaktor" data-n="${d}" /></div>`).join("")}</div>` : ""}
+`),
+          a.appendChild(r));
+      }),
+      a.querySelectorAll('input[data-field="from"], input[data-field="to"]').forEach((e) => {
+        e.addEventListener("change", (t) => {
+          ((f(t.target.dataset.abbr)[t.target.dataset.field] = t.target.value.trim()), g(), y());
+        });
+      }),
+      a.querySelectorAll('input[data-field="faktor"]').forEach((e) => {
+        e.addEventListener("change", (t) => {
+          const o = t.target.dataset.abbr,
+            l = parseFloat(t.target.value.replace(",", ".")),
+            r = f(o);
+          ((r.faktor = !isNaN(l) && l > 0 ? l : null), f(o).perPlace && S(), g(), y());
+        });
+      }),
+      a.querySelectorAll('input[data-field="perPlace"]').forEach((e) => {
+        e.addEventListener("change", (t) => {
+          const o = f(t.target.dataset.abbr);
+          ((o.perPlace = t.target.checked), S(), g(), y());
+        });
+      }),
+      a.querySelectorAll('input[data-field="pfaktor"]').forEach((e) => {
+        e.addEventListener("change", (t) => {
+          const o = f(t.target.dataset.abbr),
+            l = parseFloat(t.target.value.replace(",", "."));
+          (Array.isArray(o.faktoren) || (o.faktoren = [null, null, null, null, null]),
+            (o.faktoren[parseInt(t.target.dataset.n, 10)] = !isNaN(l) && l > 0 ? l : null),
+            g(),
+            y());
+        });
+      }),
+      a.querySelectorAll(".place-chip").forEach((e) => {
+        e.addEventListener("click", (t) => {
+          const o = t.currentTarget.dataset.abbr,
+            l = parseInt(t.currentTarget.dataset.n, 10),
+            r = f(o);
+          ((r.placeCount = l === r.placeCount ? l - 1 : l), S(), g(), y());
+        });
+      }));
+  }
+  function R(a, e, t, o) {
+    const l = i(a, e, t);
+    if (!l)
+      return {
+        warn: !0,
+        eig: null,
+        eigLine: `${tl("pl.level")} <span class="lvl">${e}</span>: <span class="warn">${tl("lg.dataMissing")}</span>`,
+        beitragText: `<span class="warn">${tl("lg.dataMissing")}</span>`,
+      };
+    const r = DATA[a].rows[String(e)][0],
+      d = l.slice(0, o === 5 ? 7 : o).reduce((s, h) => s + h, 0),
+      m = r - d,
+      v = [];
+    for (let s = 7; s >= 1; s--) l[s - 1] !== 0 && v.push(`P${s}(<span class="num">${l[s - 1]}</span>)`);
+    return {
+      warn: !1,
+      eig: m,
+      eigLine: `${tl("pl.level")} <span class="lvl">${e}</span>: <span class="num">${m}</span>`,
+      beitragText: `<span class="lvl">${c}</span> ${AB(a)} ${v.join(" ")}`.trimEnd(),
+    };
+  }
+  // Zusatzkosten: immer offen; Summe, je Stufe (nicht kumulativ) und kumulativ
+  function xcostPanel(ab, lo, hi) {
+    const rows = [],
+      run = { cs: 0, gs: 0, c: 0, su: 0, me: 0, go: 0 };
+    for (let L = lo; L <= hi; L++) {
+      const x = DATA[ab].max >= L && L >= 1 ? lgExtra(ab, L) : null;
+      if (!x) continue;
+      for (const k of LGX_FIELDS) run[k] += x[k];
+      rows.push(`<div><span class="xl">${tl("x.level")} ${L}</span> ${xLine(x)}</div>`);
+    }
+    return {
+      sum: `<label class="small">${tl("x.title")} · ${tl("x.sum", { a: lo, b: hi })}</label><div class="xout">${xLine(run)}</div>`,
+      per: `<label class="small">${tl("x.per")}</label><div class="xout xscroll">${rows.join("") || tl("x.none")}</div>`,
+    };
+  }
+  function y() {
+    const a = n.getElementById("outputs");
+    ((a.innerHTML = ""),
+      ORDER.forEach((e) => {
+        if (!L(e)) return;
+        const t = f(e),
+          o = parseInt(t.from, 10),
+          l = parseInt(t.to, 10),
+          r = TP(e),
+          d = !!u[e];
+        let m = 0,
+          v = !1;
+        const s = [],
+          h = [];
+        for (let b = o; b <= l; b++) {
+          const { warn: B, eig: k, eigLine: C, beitragText: M } = R(e, b, r, t.placeCount);
+          (B ? (v = !0) : (m += k),
+            s.push(C),
+            h.push(
+              `<div class="lvl-block" data-k="${e}:${b}"><div class="lvl-label">${tl("pl.level")} ${b}${B ? "" : `<div class="lvl-own">${tl("pl.ownShort")}<span class="num">${k}</span></div>`}</div><div class="txt">${M}</div><button class="lvl-copy" title="${tl("pl.copy")}">📋</button></div>`,
+            ));
+        }
+        const w = document.createElement("div"),
+          xc = xcostPanel(e, o, l);
+        ((w.className = "panel out-panel" + (d ? " collapsed" : "")),
+          (w.innerHTML = `
+<h2 class="section collapsible-header out-header" data-oabbr="${e}">
+<span class="collapse-arrow">▼</span> ${NAMES[e]} (${AB(e)})
+</h2>
+<div class="panel-body">
+<div class="total-display">
+<span class="num">${m}</span>
+<span class="label">${tl("pl.totalOwn", { a: o, b: l })}${v ? ` <span class="warn">${tl("pl.incomplete")}</span>` : ""}</span>
+</div>
+${xc.sum}
+${xc.per}
+<label class="small">${tl("pl.ownPerLevel")}</label>
+<div class="out">${s.join(`
+`)}</div>
+<label class="small">${tl("pl.contribPerLevel")}</label>
+${h.join("")}
+</div>
+`),
+          a.appendChild(w));
+      }),
+      a.querySelectorAll(".lvl-copy").forEach((e) => {
+        const bl = e.parentElement,
+          k = bl.dataset.k,
+          sg = () => bl.querySelector(".txt").textContent; // textContent statt innerText: kein Layout je Block (sonst langsam)
+        CM[k] === sg() && ((e.dataset.done = 1), (e.textContent = "✓ 📋"));
+        e.addEventListener("click", (t) => {
+          A(t.currentTarget, bl.querySelector(".txt").innerText, () => {
+            ((CM[k] = sg()), cmSave(), (e.dataset.done = 1));
+          });
+        });
+      }),
+      a.querySelectorAll(".out-header").forEach((e) => {
+        e.addEventListener("click", () => {
+          const t = e.dataset.oabbr;
+          ((u[t] = !u[t]), e.closest(".panel").classList.toggle("collapsed", u[t]), g());
+        });
+      }));
+  }
+  (n.querySelector('[data-panel="buildings"]').addEventListener("click", () => {
+    ((p = !p), n.getElementById("panelBuildings").classList.toggle("collapsed", p), g());
+  }),
+    n.getElementById("playerNameInput").addEventListener("change", (a) => {
+      ((c = a.target.value.trim() || "Bachphu3a"), (a.target.value = c), g(), y());
+    }),
+    n.getElementById("btnReset").addEventListener("click", () => {
+      ((c = "Bachphu3a"),
+        (x = {}),
+        (p = !1),
+        (u = {}),
+        (n.getElementById("playerNameInput").value = c),
+        n.getElementById("panelBuildings").classList.remove("collapsed"),
+        S(),
+        y(),
+        g());
+    }));
+  async function D() {
+    (await z(),
+      (n.getElementById("playerNameInput").value = c),
+      n.getElementById("panelBuildings").classList.toggle("collapsed", p),
+      S(),
+      y());
+  }
+  ((window.plRender = () => {
+    (S(), y());
+  }),
+    D());
+}
+const TB = ["lg", "pl", "fe", "cp", "nf"];
+let feOn = 0,
+  cpOn = 0,
+  nfOn = 0;
+function tab(n) {
+  (TB.includes(n) || (n = "lg"),
+    document.body.classList.toggle("fe", n == "fe" || n == "cp" || n == "nf"),
+    (document.getElementById("feWrap").hidden = n != "fe" && n != "cp" && n != "nf"),
+    (document.getElementById("fe").hidden = n != "fe"),
+    (document.getElementById("cpf").hidden = n != "cp"),
+    (document.getElementById("nf").hidden = n != "nf"),
+    n == "fe" && !feOn && window.parent === window && ((feOn = 1), (document.getElementById("fe").src = "foeff.html")),
+    n == "cp" && !cpOn && window.parent === window && ((cpOn = 1), (document.getElementById("cpf").src = "city.html")),
+    n == "nf" && !nfOn && window.parent === window && ((nfOn = 1), (document.getElementById("nf").src = "notify.html")),
+    n != "fe" && n != "cp" && n != "nf" && (i18nSync(), setView(n)),
+    document.querySelectorAll("#tabs button").forEach((i) => i.classList.toggle("on", i.dataset.t == n)));
+  try {
+    localStorage.setItem("foe-tools:tab", n);
+  } catch {}
+}
+// Ansichtswechsel mit Aus-/Einblenden (Web Animations API: startet bei jedem Klick neu, auch bei schnellem Wechsel)
+let tabCur = "lg";
+const tabViews = (n) =>
+  n == "pl"
+    ? [document.getElementById("plHost")]
+    : n == "lg"
+      ? [...document.body.children].filter(
+          (e) =>
+            !["tabs", "feWrap", "plHost", "lgSel"].includes(e.id) &&
+            !/^(SCRIPT|STYLE|LINK)$/.test(e.tagName) &&
+            !e.classList.contains("lgpk") &&
+            !e.hidden,
+        )
+      : [document.getElementById("feWrap")];
+const tabIsFrame = (x) => x == "fe" || x == "cp" || x == "nf";
+// Alle Tabwechsel gleich: sofort wechseln, neuer Inhalt blendet 180 ms ein. Bei Rahmen-Tabs blendet nur der Rahmeninhalt ein
+// (der opake Rahmen deckt die Seite darunter ab, kein Aufblitzen des LG-Rechners).
+function tabGo(n) {
+  if (n == tabCur) return;
+  const was = tabCur;
+  tab(n);
+  tabCur = n;
+  if (!document.body.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const els = tabIsFrame(n) ? [document.getElementById(n == "fe" ? "fe" : n == "cp" ? "cpf" : "nf")] : tabViews(n);
+  els.forEach((e) => {
+    e.getAnimations().forEach((x) => x.cancel());
+    e.animate(
+      tabIsFrame(was) && tabIsFrame(n)
+        ? [{ opacity: 0 }, { opacity: 1 }]
+        : [
+            { opacity: 0, transform: "translateY(8px)" },
+            { opacity: 1, transform: "none" },
+          ],
+      { duration: 180, easing: "ease-out" },
+    );
+  });
+}
+document.getElementById("tabs").onclick = (n) => {
+  const i = n.target.closest("button");
+  i && tabGo(i.dataset.t);
+};
+let t0;
+try {
+  t0 = localStorage.getItem("foe-tools:tab");
+} catch {}
+(tab(t0),
+  (tabCur = TB.includes(t0) ? t0 : "lg"),
+  "serviceWorker" in navigator &&
+    addEventListener("load", () => {
+      (navigator.serviceWorker
+        .register("service-worker.js", { updateViaCache: "none" })
+        .then(() => navigator.serviceWorker.ready)
+        .then((n) => n.active && n.active.postMessage("warm"))
+        .catch(() => {}),
+        navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}));
+    }));
+</script>
+<script>
+// Gemeinsame Auswahl im App-Design (Bottom-Sheet) für foeff.html und city.html statt der Browser-Dialoge.
+// Jede Seite definiert vorher PKL = () => ({done, ph, none}) (Texte der aktuellen Sprache).
+// pkOpen = Sheet (einfach oder mehrfach); enhSel(root) ersetzt <select> im Teilbaum durch einen Knopf, der das Sheet öffnet.
+// Werte, change-Ereignis und Programmzugriffe (value, innerHTML, selectedIndex) bleiben die des versteckten select.
+const pkEsc = (e) =>
+  String(e).replace(/[&<>"]/g, (t) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[t]);
+function pkOpen(o) {
+  const L = PKL(),
+    q = (s) => document.querySelector(s),
+    a = document.createElement("div");
+  // kurze Listen (Sprache, Layouts …) als Dialog in der Mitte, lange als Sheet unten
+  a.className = "pkov" + ((o.mid ?? (!o.multi && !o.mu && o.items.length <= 8)) ? " mid" : "");
+  const many = o.items.length > 14 && !o.nosearch,
+    draw = () => {
+      const f = (q("#pkq") ? q("#pkq").value : "").trim().toLowerCase(),
+        // o.mu(v, gruppe) macht einzelne Zeilen zu Häkchen-Zeilen (Sheet bleibt offen), die übrigen wählen einfach und schließen
+        row = (v, t, all, grp) =>
+          `<div class="pkr${o.sel(v, all) ? " on" : ""}${(o.mu ? o.mu(v, grp) : o.multi) ? " mu" : ""}" data-v="${pkEsc(v)}"${all ? ' data-all="1"' : ""}><span>${pkEsc(t)}</span><i class="ck"></i></div>`;
+      let g = null,
+        h = o.all && !f ? row("", o.all, true) : "";
+      for (const [v, t, grp] of o.items) {
+        if (f && !t.toLowerCase().includes(f)) continue;
+        grp !== g && ((g = grp), grp && (h += `<h2>${pkEsc(grp)}</h2>`));
+        h += row(v, t, false, grp);
+      }
+      q("#pkl").innerHTML = h || `<div class="pkn">${pkEsc(L.none)}</div>`;
+    };
+  a.innerHTML = `<div class="card pksh"><div class="pkh"><div class="pkt"><b>${pkEsc(o.title || "")}</b>${o.multi || o.mu ? `<button class="s" id="pkd">${pkEsc(L.done)}</button>` : ""}</div>${many ? `<input id="pkq" type="search" placeholder="${pkEsc(L.ph)}" style="margin-top:8px;width:100%">` : ""}</div><div id="pkl"></div></div>`;
+  document.body.appendChild(a);
+  draw();
+  const sc = a.querySelector(".pksh"),
+    cur = a.querySelector(".pkr.on:not([data-all])");
+  cur && !o.multi && (sc.scrollTop = Math.max(0, cur.offsetTop - 140));
+  a.onclick = (e) => {
+    if (e.target === a || e.target.id == "pkd") return a.remove();
+    const r = e.target.closest(".pkr");
+    if (!r) return;
+    o.pick(r.dataset.v, !!r.dataset.all);
+    if (r.classList.contains("mu")) {
+      const y = sc.scrollTop;
+      draw();
+      sc.scrollTop = y;
+    } else a.remove();
+  };
+  q("#pkq") && (q("#pkq").oninput = draw);
+}
+function pkLabel(s) {
+  const o = s.options[s.selectedIndex];
+  s._pk.textContent = o ? o.text : "";
+}
+// Alle erweiterten select neu beschriften (nach Sprachwechsel)
+function pkSync() {
+  document.querySelectorAll("select").forEach((s) => s._pk && pkLabel(s));
+}
+function enhSel(root, sel) {
+  (root || document).querySelectorAll(sel || "select").forEach((s) => {
+    if (s._pk) return pkLabel(s);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pk" + (/^(lgSel|lgs|lg)$/.test(s.id) ? " lgpk" : "");
+    if (!/^(lgSel|lgs|lg)$/.test(s.id)) {
+      b.style.cssText = s.style.cssText;
+      b.style.paddingRight = "24px";
+    }
+    b.title = s.title || "";
+    s.style.display = "none";
+    s.after(b);
+    s._pk = b;
+    // Programmzugriffe auf value/innerHTML/selectedIndex halten den Knopf aktuell
+    for (const [P, k] of [
+      [HTMLSelectElement.prototype, "value"],
+      [HTMLSelectElement.prototype, "selectedIndex"],
+      [Element.prototype, "innerHTML"],
+    ]) {
+      const d = Object.getOwnPropertyDescriptor(P, k);
+      Object.defineProperty(s, k, {
+        configurable: true,
+        get() {
+          return d.get.call(this);
+        },
+        set(v) {
+          d.set.call(this, v);
+          pkLabel(this);
+        },
+      });
+    }
+    pkLabel(s);
+    s.addEventListener("change", () => pkLabel(s));
+    b.onclick = () => {
+      const pre = s.dataset.strip ? PKL().sort + " " : "",
+        items = [...s.children].flatMap((c) =>
+          c.tagName == "OPTGROUP"
+            ? [...c.children].map((p) => [p.value, p.text.replace(pre, ""), c.label])
+            : [[c.value, c.text.replace(pre, ""), ""]],
+        );
+      pkOpen({
+        title: s.dataset.t || s.title || "",
+        nosearch: s.dataset.ns != null,
+        items,
+        sel: (v) => v == s.value,
+        pick: (v) => {
+          s.value = v;
+          s.dispatchEvent(new Event("change"));
+        },
+      });
+    };
+  });
+}
+// Kalender im App-Design statt des Browser-Datumsdialogs: o = {title, value "JJJJ-MM-TT", pick(wert)}
+function pkDate(o) {
+  const lang = PKL().lang || "de",
+    p2 = (n) => String(n).padStart(2, "0"),
+    now = new Date(),
+    today = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`,
+    a = document.createElement("div");
+  let [y, m] = (o.value || today).split("-").map(Number);
+  m -= 1;
+  a.className = "pkov mid";
+  const draw = () => {
+    const first = (new Date(y, m, 1).getDay() + 6) % 7,
+      n = new Date(y, m + 1, 0).getDate();
+    let h = `<div class="pkt"><button type="button" class="s" data-nav="-1">‹</button><b>${pkEsc(new Date(y, m, 1).toLocaleDateString(lang, { month: "long", year: "numeric" }))}</b><button type="button" class="s" data-nav="1">›</button></div><div class="pkcal">`;
+    for (let i = 0; i < 7; i++)
+      h += `<span class="wd">${pkEsc(new Date(2026, 0, 5 + i).toLocaleDateString(lang, { weekday: "short" }))}</span>`;
+    for (let i = 0; i < first; i++) h += "<span></span>";
+    for (let d = 1; d <= n; d++) {
+      const v = `${y}-${p2(m + 1)}-${p2(d)}`;
+      h += `<button type="button" class="pkd${v == o.value ? " on" : ""}${v == today ? " td" : ""}" data-d="${v}">${d}</button>`;
+    }
+    a.firstChild.querySelector(".pkb").innerHTML = h + "</div>";
+  };
+  a.innerHTML = `<div class="card pksh"><div class="pkh"><div class="pkt"><b>${pkEsc(o.title || "")}</b></div></div><div class="pkb"></div></div>`;
+  document.body.appendChild(a);
+  draw();
+  a.onclick = (e) => {
+    if (e.target === a) return a.remove();
+    const t = e.target.closest("button");
+    if (!t) return;
+    if (t.dataset.nav) {
+      m += +t.dataset.nav;
+      m < 0 && ((m = 11), y--);
+      m > 11 && ((m = 0), y++);
+      return draw();
+    }
+    t.dataset.d && (o.pick(t.dataset.d), a.remove());
+  };
+}
+function pkDateLabel(s) {
+  const v = s.value;
+  s._pk.textContent = /^\d{4}-\d{2}-\d{2}$/.test(v)
+    ? new Date(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8)).toLocaleDateString(PKL().lang || "de", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "–";
+}
+function enhDate(root) {
+  (root || document).querySelectorAll("input[type=date]").forEach((s) => {
+    if (s._pk) return pkDateLabel(s);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pk";
+    s.style.display = "none";
+    s.after(b);
+    s._pk = b;
+    const d = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    Object.defineProperty(s, "value", {
+      configurable: true,
+      get() {
+        return d.get.call(this);
+      },
+      set(v) {
+        d.set.call(this, v);
+        pkDateLabel(this);
+      },
+    });
+    pkDateLabel(s);
+    s.addEventListener("change", () => pkDateLabel(s));
+    b.onclick = () =>
+      pkDate({
+        title: s.closest("label") ? s.closest("label").firstElementChild.textContent : "",
+        value: s.value,
+        pick: (v) => {
+          s.value = v;
+          s.dispatchEvent(new Event("change"));
+        },
+      });
+  });
+}
+// Zeitwähler im App-Design statt des Android-Uhrdialogs: o = {title, value "HH:MM", pick(wert)}; Stunden 0–23, Minuten in 5er-Schritten + ±1
+function pkTime(o) {
+  const L = PKL(),
+    p2 = (n) => String(n).padStart(2, "0"),
+    a = document.createElement("div");
+  let [h, m] = /^\d{2}:\d{2}$/.test(o.value || "") ? o.value.split(":").map(Number) : [18, 0];
+  a.className = "pkov mid";
+  const draw = () => {
+    let x = `<div class="pktm"><b>${p2(h)}:${p2(m)}</b></div><div class="pkcal pkh6">`;
+    for (let i = 0; i < 24; i++)
+      x += `<button type="button" class="pkd${i == h ? " on" : ""}" data-h="${i}">${p2(i)}</button>`;
+    x += `</div><div class="pkcal pkh6">`;
+    for (let i = 0; i < 60; i += 5)
+      x += `<button type="button" class="pkd${i == m ? " on" : ""}" data-m="${i}">${p2(i)}</button>`;
+    x += `</div><div class="pkfine"><button type="button" class="s" data-d="-1">−1 min</button><button type="button" class="s" data-d="1">+1 min</button></div>`;
+    a.querySelector(".pkb").innerHTML = x;
+  };
+  a.innerHTML = `<div class="card pksh"><div class="pkh"><div class="pkt"><b>${pkEsc(o.title || "")}</b><button type="button" class="s" data-ok="1">${pkEsc(L.done)}</button></div></div><div class="pkb"></div></div>`;
+  document.body.appendChild(a);
+  draw();
+  a.onclick = (e) => {
+    if (e.target === a) return a.remove();
+    const t = e.target.closest("button");
+    if (!t) return;
+    if (t.dataset.ok) return (o.pick(`${p2(h)}:${p2(m)}`), a.remove());
+    if (t.dataset.h) h = +t.dataset.h;
+    if (t.dataset.m) m = +t.dataset.m;
+    if (t.dataset.d) {
+      const v = (((h * 60 + m + +t.dataset.d) % 1440) + 1440) % 1440;
+      ((h = Math.floor(v / 60)), (m = v % 60));
+    }
+    draw();
+  };
+}
+function enhTime(root) {
+  (root || document).querySelectorAll("input[type=time]").forEach((s) => {
+    if (s._pk) return (s._pk.textContent = s.value || "–");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pk tm";
+    s.style.display = "none";
+    s.after(b);
+    s._pk = b;
+    const d = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    Object.defineProperty(s, "value", {
+      configurable: true,
+      get() {
+        return d.get.call(this);
+      },
+      set(v) {
+        d.set.call(this, v);
+        b.textContent = this.value || "–";
+      },
+    });
+    b.textContent = s.value || "–";
+    b.onclick = () =>
+      pkTime({
+        title: s.title || "",
+        value: s.value,
+        pick: (v) => {
+          s.value = v;
+          s.dispatchEvent(new Event("change"));
+        },
+      });
+  });
+}
+</script><script>
+// LG-Rechner/Powerlevel: Sprachwahl im App-Design (gemeinsame Auswahl js/pick.js)
+const PKL = () => ({ done: "OK", ph: "", none: "", sort: "" });
+enhSel(document, "#lgSel");
+</script><script>
+(function () {
+  var css = ".num{cursor:copy;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}";
+  var st = document.createElement("style");
+  st.textContent = css;
+  document.head.appendChild(st);
+  var _pi = window.plInit;
+  if (_pi)
+    window.plInit = function () {
+      var r = _pi.apply(this, arguments);
+      try {
+        var sr = document.getElementById("plHost").shadowRoot,
+          x = document.createElement("style");
+        x.textContent = css;
+        sr.appendChild(x);
+      } catch {}
+      return r;
+    };
+  var tm = 0,
+    sx = 0,
+    sy = 0,
+    hold = 0;
+  function toast(m, warn) {
+    var t = document.getElementById("cpToast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "cpToast";
+      t.style.cssText =
+        "position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#2e7d32;color:#fff;padding:8px 16px;border-radius:20px;font:600 14px Segoe UI,sans-serif;z-index:99999;opacity:0;transition:opacity .2s;pointer-events:none";
+      document.body.appendChild(t);
+    }
+    t.textContent = m;
+    t.style.background = warn ? "#e65100" : "#2e7d32";
+    t.style.opacity = 1;
+    clearTimeout(t.__t);
+    t.__t = setTimeout(
+      function () {
+        t.style.opacity = 0;
+      },
+      warn ? 4000 : 1400,
+    );
+  }
+  function copy(v, el) {
+    var ok = function () {
+      var de = typeof LNG !== "undefined" && LNG === "de";
+      toast((de ? "Kopiert: " : "Copied: ") + v);
+      if (el) {
+        el.style.outline = "2px solid #4caf50";
+        setTimeout(function () {
+          el.style.outline = "";
+        }, 600);
+      }
+      if (navigator.vibrate)
+        try {
+          navigator.vibrate(30);
+        } catch {}
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(v).then(ok, function () {
+        fallbackCopy(v) && ok();
+      });
+    else fallbackCopy(v) && ok();
+  }
+  function cancel() {
+    clearTimeout(tm);
+    tm = 0;
+  }
+  document.addEventListener(
+    "pointerdown",
+    function (e) {
+      if (e.button > 0) return;
+      var t = (e.composedPath && e.composedPath()[0]) || e.target;
+      var n = t && t.closest && t.closest(".num");
+      if (!n) return;
+      cancel();
+      sx = e.clientX;
+      sy = e.clientY;
+      hold = 0;
+      tm = setTimeout(function () {
+        tm = 0;
+        hold = 1;
+        var v = (n.textContent || "").trim();
+        if (!v) return;
+        // schon kopiert: erst Warnung (orange), nicht kopieren; der zweite Druck kopiert
+        if (typeof lgCopyCheck == "function" && lgCopyCheck(n)) {
+          toast(tl("lg.dupCopyNum"), 1);
+          if (navigator.vibrate)
+            try {
+              navigator.vibrate([20, 40, 20]);
+            } catch {}
+          return;
+        }
+        copy(v, n);
+      }, 500);
+    },
+    true,
+  );
+  document.addEventListener(
+    "pointermove",
+    function (e) {
+      if (tm && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) cancel();
+    },
+    true,
+  );
+  ["pointerup", "pointercancel", "scroll"].forEach(function (k) {
+    document.addEventListener(k, cancel, true);
+  });
+  document.addEventListener(
+    "contextmenu",
+    function (e) {
+      var t = (e.composedPath && e.composedPath()[0]) || e.target;
+      if (t && t.closest && t.closest(".num") && (hold || tm)) e.preventDefault();
+    },
+    true,
+  );
+})();
+</script>
+<script>
+// Update-Hinweis: Nach einem Upload holt sich der Service Worker die neuen Dateien im Hintergrund, die offene App läuft aber noch mit
+// der alten Version. Sobald ein neuer Service Worker die Kontrolle übernimmt (controllerchange) und die App schon von einem
+// alten gesteuert wurde, erscheint eine Leiste „Neue Version verfügbar – Neu laden“. Beim allerersten Besuch (noch kein Controller) nicht.
+(function () {
+  if (!("serviceWorker" in navigator)) return;
+  const hadController = !!navigator.serviceWorker.controller;
+  let shown = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || shown) return;
+    shown = true;
+    const bar = document.createElement("div");
+    bar.id = "updBar";
+    bar.innerHTML = `<span data-i18n="upd.msg"></span><button data-i18n="upd.reload"></button>`;
+    bar.querySelector("button").onclick = () => location.reload();
+    document.body.appendChild(bar);
+    applyI18n(bar);
+  });
+})();
+</script>
 </body>
 </html>
