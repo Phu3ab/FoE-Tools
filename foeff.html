@@ -1525,7 +1525,9 @@ const $ = (e) => document.querySelector(e),
     } catch {}
   };
 // Entfernte Effekte (Index bleibt belegt, damit die Daten-Indizes stimmen): Mäzenbonus (FP-Wert), Trade Coins, Item-Wert, Heldenschriftrollen, Tapferkeitsmarken; in der Gewichtung ausgeblendet
-const HID = new Set([61, 64, 70, 81, 82]);
+const HID = new Set([61, 64, 70, 81, 82, 86]);
+// „Güter (Zufallszeitalter)“ (86) zählt als „Güter“ (2): kein eigenes Gewicht, folgt immer dem von Güter
+const GZ = (w) => ((w[86] = w[2]), w);
 LGL.forEach(([e, t]) => {
   D.labels.includes(e) || (D.labels.push(e), D.w.push(t));
 });
@@ -1570,6 +1572,7 @@ let W = ls("w", D.w.slice()),
   q = "",
   at = ls("at", { atk: 200, c: 60, t: 61 });
 for (let e = 0; e < D.w.length; e++) typeof W[e] != "number" && (W[e] = D.w[e]);
+GZ(W);
 const area = (e) => {
     const [t, n] = e[4].toLowerCase().split("x").map(Number);
     return (t * n || 0) + e[5];
@@ -2133,9 +2136,10 @@ function vW() {
         .filter((s) => (t ? n[s].toLowerCase().includes(t) || trn(n[s]).toLowerCase().includes(t) : iw(s) || IW0[s]))
         .sort((s, a) => uw(a) - uw(s) || ut(s) - ut(a) || Math.abs(iw(a)) - Math.abs(iw(s)) || n[s].localeCompare(n[a]))
         .slice(0, 80)
-        .map((s) => `<span>${esc(n[s])}</span><input type="number" step="any" data-k="${esc(s)}" value="${iw(s)}">`)
+        .map((s) => `<span>${ic(itIc(n[s], ""))}${esc(n[s])}</span><input type="number" step="any" data-k="${esc(s)}" value="${iw(s)}">`)
         .join("") || `<div class="m">${tl("f.nothing")}</div>`,
     );
+    icFill($("#il"));
   };
   (($("#iq").oninput = e),
     e(),
@@ -2143,7 +2147,7 @@ function vW() {
       const n = t.target,
         s = n.dataset.i,
         a = n.dataset.k;
-      if (s != null) W[s] = parseFloat(n.value) || 0;
+      if (s != null) (W[s] = parseFloat(n.value) || 0), GZ(W);
       else if (a != null) {
         const i = parseFloat(n.value) || 0;
         i === (IW0[a] || 0) ? delete IWo[a] : (IWo[a] = i);
@@ -2153,7 +2157,7 @@ function vW() {
       confirm(tl("f.w.saveConfirm")) && (sv("w", W), sv("iw", IWo));
     }),
     ($("#wl").onclick = () => {
-      ((W = ls("w", D.w.slice())), (IWo = ls("iw", {})), draw());
+      ((W = GZ(ls("w", D.w.slice()))), (IWo = ls("iw", {})), draw());
     }));
 }
 function vA() {
@@ -2185,7 +2189,7 @@ const ICS = [
   "forge_points_production",
   "goods",
   "previous_era_goods",
-  "next_age_random_goods",
+  "all_goods_of_next_age",
   "goods",
   "goods_production_boost",
   "special_goods",
